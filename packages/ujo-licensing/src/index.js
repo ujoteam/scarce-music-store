@@ -72,6 +72,15 @@ const deploy = async () => {
   console.log('Contract deployed to', result.options.address);
 
   contractAddress = result.options.address;
+
+  // Update address on server
+  let res;
+  try {
+    res = await axios.post(`${serverAddress}/update-address`, { address: contractAddress });
+  } catch (error) {
+    console.log(error);
+  }
+  console.log(res);
 };
 
 async function updateProducts(productIds) {
@@ -244,17 +253,15 @@ async function verifyOwnership() {
     console.log(error);
   }
 
-  console.log('============');
   console.log(res);
+  console.log(res.data);
   console.log(accounts[0]);
   // Check if signer is the same
-  if (res === accounts[0]) {
+  if (res.data === accounts[0].toLowerCase()) {
     console.log('Success!');
   } else {
     console.log('Denied!');
   }
-
-  // TODO - Check ownerOf NFT
 }
 
 async function initEventListeners() {
