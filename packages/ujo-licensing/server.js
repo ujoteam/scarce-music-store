@@ -1,0 +1,81 @@
+const express = require('express');
+const Web3 = require('web3');
+const HDWalletProvider = require('truffle-hdwallet-provider');
+const MetaAuth = require('./meta-auth');
+
+const LicenseContract = require('./src/LicenseCore.json');
+
+let contractAddress;
+let accounts;
+let currentNetwork;
+let web3;
+
+// development
+if (process.env.NODE_ENV !== 'production') {
+  contractAddress = '';
+  web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'));
+} else {
+  // production
+  contractAddress = '';
+  const mnemonic = process.env.MNEMONIC;
+  const infuraApi = process.env.INFURA_API;
+  web3 = new Web3(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
+}
+
+const port = process.env.PORT || '3001';
+const app = express();
+
+const metaAuth = new MetaAuth({
+  banner: 'Ujo Licensing',
+});
+
+const ContractInstance = new web3.eth.Contract(LicenseContract.abi, contractAddress);
+
+app.use('/', express.static('.'));
+
+app.get('/auth/:MetaAddress', metaAuth, (req, res) => {
+  // Request a message from the server
+  if (req.metaAuth && req.metaAuth.challenge) {
+    res.send(req.metaAuth.challenge);
+  }
+});
+
+app.get('/auth/:MetaMessage/:MetaSignature', metaAuth, (req, res) => {
+  if (req.metaAuth && req.metaAuth.recovered) {
+    console.log('Checking if account owns the token');
+
+    // Check whether this user has a valid ERC721 token
+    const balance = ContractInstance.methods.balanceOf(req.metaAuth.recovered, (err, result) => {
+      console.log(err, result);
+      if (err) {
+        return console.error(err);
+      }
+      // Authentication is valid, assign JWT, etc.
+      console.log(result.c[0]);
+      if (result.c[0] > 0) res.send(req.metaAuth.recovered);
+      // Authentication fail, no subscription token
+      else res.status(400).send();
+    });
+  } else {
+    // Sig did not match, invalid authentication
+    res.status(400).send();
+  }
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  console.log(next);
+
+  if (err.statusCode) {
+    // instance of HTTPError
+    res.status(err.statusCode).json({ error: err.message });
+  } else {
+    // something else
+    res.status(500).json({ error: `Unhandled error: ${err.toString()}` });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
