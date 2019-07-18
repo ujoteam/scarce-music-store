@@ -59,11 +59,16 @@ app.get('/auth/:MetaMessage/:MetaSignature', metaAuth, (req, res) => {
       .call()
       .then(result => {
         // Authentication is valid, assign JWT, etc.
+        console.log('+++++++++++++');
         console.log(result.toString());
+        console.log('+++++++++++');
         result = web3.utils.toBN(result);
-        if (result.gt(0)) res.send(req.metaAuth.recovered);
-        // Authentication fail, no subscription token
-        else res.status(400).send();
+        if (result > 0) {
+          res.send(req.metaAuth.recovered);
+        } else {
+          // Authentication fail, no subscription token
+          res.status(400).send();
+        }
       });
   } else {
     // Sig did not match, invalid authentication

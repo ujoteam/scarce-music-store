@@ -45,6 +45,32 @@ const dollarToWei = (dollarAmount, exchangeRate) =>
     .divRound(new BigNumber(exchangeRate, 10))
     .mul(new BigNumber(dollarAmount, 10));
 
+/**
+ * Helper to generate durations
+ *
+ * @param {int} val amount of duration type
+ */
+const duration = {
+  seconds(val) {
+    return val;
+  },
+  minutes(val) {
+    return val * this.seconds(60);
+  },
+  hours(val) {
+    return val * this.minutes(60);
+  },
+  days(val) {
+    return val * this.hours(24);
+  },
+  weeks(val) {
+    return val * this.days(7);
+  },
+  years(val) {
+    return val * this.days(365);
+  },
+};
+
 async function initWeb3() {
   // use Metamask, et al. if available
   // If no injected web3 instance is detected, fallback to Ganache CLI.
@@ -253,11 +279,11 @@ async function verifyOwnership() {
     console.log(error);
   }
 
-  console.log(res);
-  console.log(res.data);
+  // console.log(res);
+  // console.log(res.data);
   console.log(accounts[0]);
   // Check if signer is the same
-  if (res.data === accounts[0].toLowerCase()) {
+  if (res && res.data && res.data === accounts[0].toLowerCase()) {
     console.log('Success!');
   } else {
     console.log('Denied!');
