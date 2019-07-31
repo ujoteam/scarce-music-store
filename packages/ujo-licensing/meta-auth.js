@@ -99,7 +99,8 @@ class MetaAuth {
         value: challenge,
       },
     ];
-    const recovered = recoverAddressFromSignedData('test', sig);
+
+    const recovered = recoverAddressFromSignedData(challenge, sig);
 
     // TODO - Use ethSignTyped Data
     // const recovered = sigUtil.recoverTypedSignature({

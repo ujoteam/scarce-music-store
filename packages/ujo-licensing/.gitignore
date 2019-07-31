@@ -64,3 +64,6 @@ yarn.lock
 
 coverage/
 coverage.json
+
+/server/db.json
+/dist/bundle.js

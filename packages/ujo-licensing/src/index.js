@@ -1,3 +1,4 @@
+require('@babel/polyfill');
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const axios = require('axios');
@@ -77,6 +78,7 @@ async function initWeb3() {
   const provider = web3 !== undefined ? web3.currentProvider : new Web3.providers.HttpProvider('http://127.0.0.1:8545');
   web3 = new Web3(provider);
   accounts = await web3.eth.getAccounts();
+  console.log('accounts', accounts);
   currentNetwork = await web3.eth.net.getId();
 }
 
