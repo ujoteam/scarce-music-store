@@ -24,7 +24,8 @@ export class App extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.accounts !== this.props.accounts) {
-      this.props.login(this.account.current.value);
+      const address = this.account.current.value;
+      this.props.login(address, this.props.accounts.indexOf(address));
     }
 
     const { currentAccount } = this.props;
@@ -38,7 +39,9 @@ export class App extends React.Component {
   }
 
   async changeAddress() {
-    const jwt = await this.props.login(this.account.current.value);
+    const address = this.account.current.value;
+    const jwt = await this.props.login(address, this.props.accounts.indexOf(address));
+
     console.log('addr jwt ~>', jwt);
     this.props.changeAddress(this.account.current.value, jwt);
     // this.props.history.push('/');

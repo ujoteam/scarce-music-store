@@ -1,4 +1,5 @@
-import Web3 from 'web3';
+import "@babel/polyfill";
+import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import sigUtil from 'eth-sig-util';
 
@@ -9,10 +10,11 @@ const ethUtil = require('ethereumjs-util');
 
 class UjoLicensing {
   constructor(opts) {
+    // TODO: pass in RPCProvicer
     // if (typeof opts !== 'object') throw new Error(constructorError);
 
     this.contractInstances = {};
-    this.web3 = {};
+    this.provider = {};
 
     this.init();
     /**
@@ -21,10 +23,11 @@ class UjoLicensing {
      * @param {string} estimatedGas amount of gas required from `estimateGas`
      */
     this.boostGas = estimatedGas => {
-      const gasBoost = new BigNumber(estimatedGas, 10).div(new BigNumber('20')).floor();
-      return new BigNumber(estimatedGas, 10).add(gasBoost).floor();
+      const gasBoost = new BigNumber(estimatedGas, 10).div(new BigNumber('20')).integerValue(BigNumber.ROUND_DOWN);
+      return new BigNumber(estimatedGas, 10).plus(gasBoost).integerValue(BigNumber.ROUND_DOWN);
     };
-    this.signData = (data, address) => this.web3.eth.sign(data, address);
+    // TODO: in the future it should accept a signer not an index!
+    this.signData = async (data, index) => this.provider.getSigner(index).signMessage(data);
     this.recoverAddressFromSignedData = (data, sig) => {
       const msg = ethUtil.bufferToHex(Buffer.from(data, 'utf8'));
       const params = { data: msg, sig };
@@ -38,61 +41,62 @@ class UjoLicensing {
       }
       return address;
     };
+    this.normalizeProductValues = product => ({
+      inventory: product.inventory.toNumber(),
+      interval: product.interval.toNumber(),
+      price: product.price.toNumber(),
+      totalSupply: product.totalSupply.toNumber(),
+      renewable: product.renewable,
+    })
   }
 
   init() {
     // const provider = (web3 !== undefined) ? web3.currentProvider : new Web3.providers.HttpProvider('http://127.0.0.1:8545');
-    const provider = new Web3.providers.HttpProvider('http://127.0.0.1:8545');
-    const web3Provider = new Web3(provider);
-    // window.web3 = web3Provider;
-    this.web3 = web3Provider;
+    this.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
   }
 
-  initializeContractIfNotExist(contractAddress) {
-    const inStorage = this.contractInstances[contractAddress];
+  initializeContractIfNotExist(contractAddress, indexOfAccount) {
+    if (!this.contractInstances[indexOfAccount]) this.contractInstances[indexOfAccount] = {};
+    const inStorage = this.contractInstances[indexOfAccount][contractAddress];
     if (inStorage) return inStorage;
-    const ContractInstance = new this.web3.eth.Contract(LicenseContract.abi, contractAddress);
-    this.contractInstances[contractAddress] = ContractInstance;
-    return this.contractInstances[contractAddress];
+    const ContractInstance = new ethers.Contract(contractAddress, LicenseContract.abi, this.provider.getSigner(indexOfAccount));
+    this.contractInstances[indexOfAccount][contractAddress] = ContractInstance;
+    return this.contractInstances[indexOfAccount][contractAddress];
   }
 
   // ////////////////////////////////////
   // // lots of getters for contracts
   // // might be helpful for debugging later
   // ////////////////////////////////////
-  // const productIds = await ContractInstance.methods.getAllProductIds().call();
+  // const productIds = await ContractInstance.getAllProductIds();
   // console.log('getAllProductIds()', productIds);
-  // const tokensOf = await ContractInstance.methods.tokensOf(address).call();
+  // const tokensOf = await ContractInstance.tokensOf(address);
   // console.log('tokensOf(address)', tokensOf);
-  // const balanceOf = await ContractInstance.methods.balanceOf(address).call();
+  // const balanceOf = await ContractInstance.balanceOf(address);
   // console.log('balanceOf(address)', balanceOf);
-  // const ownerOf = await ContractInstance.methods.ownerOf("0").call();
+  // const ownerOf = await ContractInstance.ownerOf("0");
   // console.log('ownerOf("0")', ownerOf);
-  // const licenseProductId = await ContractInstance.methods.licenseProductId("0").call();
+  // const licenseProductId = await ContractInstance.licenseProductId("0");
   // console.log('licenseProductId("0")', licenseProductId);
   // ////////////////////////////////////
 
-  async deployNewStore(address) {
-    const abi = new this.web3.eth.Contract(LicenseContract.abi);
-    const estimatedGas = await abi
-      .deploy({
-        data: LicenseContract.bytecode,
-      })
-      .estimateGas();
-
+  async deployNewStore(address, indexOfAccount) {
     console.log('Attempting to deploy from account', address);
-    console.log('Gas', estimatedGas);
+    const factory = new ethers.ContractFactory(LicenseContract.abi, LicenseContract.bytecode, this.provider.getSigner(indexOfAccount));
 
-    const result = await new this.web3.eth.Contract(LicenseContract.abi)
-      .deploy({ data: LicenseContract.bytecode })
-      .send({ gas: this.boostGas(estimatedGas), from: address });
-    console.log('Contract deployed to', result.options.address);
+    // TODO: ethers gasEstimation is waayyyy off - https://github.com/ethers-io/ethers.js/issues/194
+    // const estimatedGas = await this.provider.estimateGas(factory.deploy)
+    // let newGas = this.boostGas(estimatedGas);
+    // newGas = ethers.utils.hexlify(Number(newGas));
+    // const result = await factory.deploy({ gasLimit: newGas });
 
-    return result.options.address;
+    const result = await factory.deploy();
+    console.log('Contract deployed to', result.address);
+    return result.address;
   }
 
-  async createProduct(id, price, inventory, address, contractAddress) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress);
+  async createProduct(id, price, inventory, address, contractAddress, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
     const firstProduct = {
       id,
       price,
@@ -101,59 +105,51 @@ class UjoLicensing {
       interval: 0,
     };
 
-    const estimatedGas = await ContractInstance.methods
-      .createProduct(
-        firstProduct.id,
-        firstProduct.price,
-        firstProduct.initialInventory,
-        firstProduct.supply,
-        firstProduct.interval,
-      )
-      .estimateGas({
-        from: address,
-      });
+    // const estimatedGas = await this.provider.estimateGas(ContractInstance.createProduct);
+    // console.log('estimateGas', estimatedGas)
+    // // const estimatedGas = await this.provider.estimateGas(ContractInstance.createProduct(
+    // //     firstProduct.id,
+    // //     firstProduct.price,
+    // //     firstProduct.initialInventory,
+    // //     firstProduct.supply,
+    // //     firstProduct.interval,
+    // //   ));
+    // const gas = this.boostGas(estimatedGas);
 
-    const gas = this.boostGas(estimatedGas);
-    const obj = await ContractInstance.methods
-      .createProduct(
-        firstProduct.id,
-        firstProduct.price,
-        firstProduct.initialInventory,
-        firstProduct.supply,
-        firstProduct.interval,
-      )
-      .send({
-        gas,
-        from: address,
-        to: contractAddress,
-      });
+    const obj = await ContractInstance.createProduct(firstProduct.id, firstProduct.price, firstProduct.initialInventory, firstProduct.supply, firstProduct.interval);
 
-    const product = await ContractInstance.methods.productInfo(firstProduct.id).call();
+    let product = await ContractInstance.productInfo(firstProduct.id);
+    product = this.normalizeProductValues(product)
+
     return Object.assign({ productId: id }, product);
   }
 
-  async getOwnedProductIds(address, contractAddress) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress);
-    const tokensOf = await ContractInstance.methods.tokensOf(address).call();
+  async getOwnedProductIds(address, contractAddress, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    const tokensOf = await ContractInstance.tokensOf(address);
     const asyncDataFetch = async () =>
-      Promise.all(tokensOf.map(async tokenIndex => ContractInstance.methods.licenseProductId(tokenIndex).call()));
-    return asyncDataFetch();
+      Promise.all(tokensOf.map(async tokenIndex => ContractInstance.licenseProductId(tokenIndex)));
+    const productIds = await asyncDataFetch();
+    return productIds.map(bn => bn.toNumber());
   }
 
-  async getProductsForContract(contractAddress) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress);
-    const productIds = await ContractInstance.methods.getAllProductIds().call();
-    console.log(productIds);
+  async getProductsForContract(contractAddress, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    let productIds = await ContractInstance.getAllProductIds();
+    productIds = productIds.map(bn => bn.toNumber());
 
     const asyncDataFetch = async () =>
-      Promise.all(productIds.map(async productId => ContractInstance.methods.productInfo(productId).call()));
+      Promise.all(productIds.map(async productId => ContractInstance.productInfo(productId)));
 
-    const productData = await asyncDataFetch();
+    let productData = await asyncDataFetch();
+    productData = productData.map(pd => this.normalizeProductValues(pd));
 
     const asyncSoldDataFetch = async () =>
-      Promise.all(productIds.map(async productId => ContractInstance.methods.totalSold(productId).call()));
+      Promise.all(productIds.map(async productId => ContractInstance.totalSold(productId)));
 
-    const soldData = await asyncSoldDataFetch();
+    let soldData = await asyncSoldDataFetch();
+    soldData = soldData.map(bn => bn.toNumber());
+
 
     return {
       productIds,
@@ -162,30 +158,21 @@ class UjoLicensing {
     };
   }
 
-  async buyProduct(productId, address, contractAddress) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress);
+  async buyProduct(productId, address, contractAddress, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    const productInfo = await ContractInstance.productInfo(productId);
+    const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS, { value: productInfo.price });
 
-    const productInfo = await ContractInstance.methods.productInfo(productId).call();
-    console.log('productInfo', productInfo);
-    const estimatedGas = await ContractInstance.methods.purchase(productId, 1, address, ZERO_ADDRESS).estimateGas({
-      from: address,
-      value: productInfo.price, // price
-    });
+    // const gas = this.boostGas(estimatedGas);
+    // const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS)
+    // .sendTransaction({
+    //   // gas,
+    //   from: address,
+    //   value: productInfo.price,
+    // });
 
-    const gas = this.boostGas(estimatedGas);
-    const license = await ContractInstance.methods.purchase(productId, 1, address, ZERO_ADDRESS).send({
-      gas,
-      from: address,
-      value: productInfo.price,
-    });
-
-    // console.log('license', license);
-    // console.log(license.events.LicenseIssued.returnValues.licenseId);
-
-    // const owner = await ContractInstance.methods.ownerOf(license.events.LicenseIssued.returnValues.licenseId).call();
-    // console.log('owner', owner);
     // TODO: need to error handle
-    return license.events.LicenseIssued.returnValues.licenseId;
+    return license.value.toNumber();
   }
 
 }

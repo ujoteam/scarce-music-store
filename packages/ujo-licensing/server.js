@@ -1,5 +1,5 @@
 const express = require('express');
-const Web3 = require('web3');
+const Ethers = require('ethers');
 const HDWalletProvider = require('truffle-hdwallet-provider');
 const bodyParser = require('body-parser');
 const fs = require('fs');
@@ -9,12 +9,12 @@ const jwt = require('jsonwebtoken');
 const expressJWT = require('express-jwt');
 
 const MetaAuth = require('./meta-auth');
-const LicenseContract = require('./UjoLicensingClass/LicenseCore.json');
+// const LicenseContract = require('./UjoLicensingClass/LicenseCore.json');
+const UjoLicensing = require('./dist/UjoLicensingClass');
 
-let contractAddress;
-let accounts;
-let currentNetwork;
-let web3;
+// ES6 quirk. could be fixed by transpiling everything
+const UjoLicense = new UjoLicensing.default();
+
 
 const songs = [
   'https://freemusicarchive.org/file/music/no_curator/spectacular/What_Whas_That/spectacular_-_01_-_What_Was_That_Spectacular_Sound_Productions.mp3',
@@ -29,13 +29,16 @@ const songs = [
 // development
 if (process.env.NODE_ENV !== 'production') {
   // contractAddress = '';
-  web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:8545'));
-} else {
+//   web3 = new Ethers.providers.JsonRpcProvider();
+// } else {
+//   UjoLicensing = new LicensingHelper();
+  // UjoLicensing.init();
   // production
   // contractAddress = '';
-  const mnemonic = process.env.MNEMONIC;
-  const infuraApi = process.env.INFURA_API;
-  web3 = new Web3(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
+  // TODO: not sure how to handle this case at the moment
+  // const mnemonic = process.env.MNEMONIC;
+  // const infuraApi = process.env.INFURA_API;
+  // web3 = new Ethers(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
 }
 
 const port = process.env.PORT || '3001';
@@ -142,9 +145,8 @@ app.get('/content/:contractAddress/:productID', async (req, res) => {
 
   const randomIndexToPlay = Math.floor(Math.random() * (songs.length - 0)) + 0;
 
-  const ContractInstance = new web3.eth.Contract(LicenseContract.abi, contractAddress);
-  const tokenIndicies = await ContractInstance.methods.tokensOf(ethAddress).call();
-  const productIds = await getProductIdsForTokenIndecies(tokenIndicies, ContractInstance);
+  let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
+  productIds = productIds.map(id => id.toString());
 
   if (productIds.indexOf(productID) === -1) {
     return res.status(403);
@@ -177,28 +179,8 @@ app.post('/update-address', (req, res) => {
 app.get('/auth/:MetaMessage/:MetaSignature/:contractAddress', metaAuth, async (req, res) => {
   if (req.metaAuth && req.metaAuth.recovered) {
     console.log('Checking if account owns the token');
-
-    // TODO - This probably shouldn't be in this route
-    // Figure out how to handle updating the contract address
-    const ContractInstance = new web3.eth.Contract(LicenseContract.abi, req.params.contractAddress);
-
-    // Check whether this user has a valid ERC721 token
-    // This only checks if a user has a token.
-    // NOT if one of the tokens held matches the productId of the requested resource
-    // const balance = ContractInstance.methods
-    //   .balanceOf(req.metaAuth.recovered)
-    //   .call()
-    //   .then(result => {
-    //     // Authentication is valid, assign JWT, etc.
-    //     console.log(result.toString());
-    //     result = web3.utils.toBN(result);
-    //     if (result.gt(0)) res.send(req.metaAuth.recovered);
-    //     // Authentication fail, no subscription token
-    //     else res.status(400).send();
-    //   });
-
-    const tokenIndicies = await ContractInstance.methods.tokensOf(req.metaAuth.recovered).call();
-    const productIds = await getProductIdsForTokenIndecies(tokenIndicies, ContractInstance);
+    let productIds = await UjoLicense.getOwnedProductIds(req.metaAuth.recovered, req.params.contractAddress, 0);
+    productIds = productIds.map(id => id.toString());
 
     if (productIds.indexOf(req.params.MetaMessage) > -1) res.send(req.metaAuth.recovered);
     else res.status(401).send();
@@ -207,9 +189,6 @@ app.get('/auth/:MetaMessage/:MetaSignature/:contractAddress', metaAuth, async (r
     res.status(401).send();
   }
 });
-
-const getProductIdsForTokenIndecies = async (tokenIndicies, ContractInstance) =>
-  Promise.all(tokenIndicies.map(async tokenIndex => ContractInstance.methods.licenseProductId(tokenIndex).call()));
 
 // Error handler
 app.use((err, req, res, next) => {

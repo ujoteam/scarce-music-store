@@ -5,12 +5,12 @@ import { connect } from 'react-redux';
 import { Box, Button, Heading, Text, Table } from 'rimble-ui';
 import { fromJS } from 'immutable';
 
-import { deployStore, createProduct, getProductsForContract } from '../store/storeActions';
+import { createProduct, getProductsForContract } from '../store/storeActions';
 import NewProductForm from '../store/ProductForm';
 
 export class StorePage extends React.Component {
   componentWillMount() {
-    this.props.getProductsForContract(this.props.match.params.storeId);
+    this.props.getProductsForContract(this.props.match.params.storeId, this.props.indexOfAccount);
   }
 
   componentDidUpdate(prevProps) {
@@ -76,7 +76,7 @@ export class StorePage extends React.Component {
             fontWeight: 'bold',
             marginBottom: 16,
         }}>Create a New Product</Text>
-        <NewProductForm currentStore={currentStore} />
+        <NewProductForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} />
         <br />
         <br />
         <br />
@@ -99,16 +99,18 @@ export default withRouter(
     (state, props) => {
       // const contracts = state.store.get('stores').keySeq().toArray();
       const products = state.store.getIn(['stores', props.match.params.storeId]);
+      const accounts = state.store.getIn(['web3', 'accounts']);
       return {
         products: products || fromJS({}),
         accounts: state.store.getIn(['web3', 'accounts']),
         currentAccount: state.store.get('currentAccount'),
         // stores: contracts.length ? contracts : [],
         currentStore: props.match.params.storeId,
+        accounts,
+        indexOfAccount: accounts.indexOf(state.store.get('currentAccount')),
       };
     },
     {
-      deployStore,
       createProduct,
       getProductsForContract,
     },

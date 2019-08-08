@@ -2,10 +2,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Box, Button, Heading, Text, Form, EthAddress } from 'rimble-ui';
+import { Box, Button, Heading, Text, EthAddress } from 'rimble-ui';
 import Jdenticon from './Jdenticon';
 
-import { initWeb3, authenticate, deployStore, createProduct, getProductsForContract } from '../store/storeActions';
+import { initWeb3, authenticate, deployStore } from '../store/storeActions';
 
 import './AdminPage.css'
 
@@ -15,6 +15,7 @@ export class AdminPage extends React.Component {
   }
 
   render() {
+    const indexOfAccount = this.props.accounts.indexOf(this.props.currentAccount);
     return (
       <Box p={30}>
         <Heading>Welcome to the tour</Heading>
@@ -54,7 +55,7 @@ export class AdminPage extends React.Component {
         <br />
         <br />
 
-        <Button onClick={() => this.props.deployStore(this.props.currentAccount)}>Deploy A New Store</Button>
+        <Button onClick={() => this.props.deployStore(this.props.currentAccount, indexOfAccount)}>Deploy A New Store</Button>
       </Box>
     );
   }
@@ -75,7 +76,5 @@ export default connect(
     initWeb3,
     authenticate,
     deployStore,
-    createProduct,
-    getProductsForContract,
   },
 )(AdminPage);

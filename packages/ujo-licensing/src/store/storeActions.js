@@ -2,8 +2,6 @@ import axios from 'axios';
 import LicensingHelper from '../../UjoLicensingClass';
 import * as fetch from '../fetch';
 
-const ethUtil = require('ethereumjs-util');
-
 const serverAddress = 'http://localhost:3001';
 
 let UjoLicensing;
@@ -11,44 +9,18 @@ let UjoLicensing;
 // actions
 export const initWeb3 = () => async dispatch => {
   UjoLicensing = new LicensingHelper();
-  UjoLicensing.init();
+  // UjoLicensing.init();
   // use Metamask, et al. if available
   // If no injected web3 instance is detected, fallback to Ganache CLI.
-  // TODO fix hard-coding to ganache-cli web3
+  // TODO: fix hard-coding to ganache-cli web3
   // const provider = (web3 !== undefined) ? web3.currentProvider : new Web3.providers.HttpProvider('http://127.0.0.1:8545');
-  const accounts = await UjoLicensing.web3.eth.getAccounts();
+  // const accounts = await UjoLicensing.web3.eth.getAccounts();
+  const accounts = await Promise.all(Array.from(Array(10)).map(async (item, i) => await UjoLicensing.provider.getSigner(i).getAddress()));
   console.log('accounts', accounts);
   dispatch({
     type: 'WEB3_INIT',
     accounts,
   });
-};
-
-// TODO - Do we need this method?
-export const verifyOwnership = (contractAddress, signature, productId, address) => async dispatch => {
-  console.log(contractAddress);
-  // TODO - This is a hack and should happen elsewhere
-  const sig = await UjoLicensing.signData(productId, address);
-
-  // get address from sig
-  const add = UjoLicensing.recoverAddressFromSignedData(productId, sig);
-
-  // check token balance in contract to see if
-  let res;
-  try {
-    res = await axios.get(`${serverAddress}/auth/${productId}/${sig}/${contractAddress}`);
-    const { data } = res;
-    console.log(data);
-  } catch (error) {
-    console.log(error);
-  }
-
-  // Check if signer is the same
-  if (res.data === add.toLowerCase()) {
-    console.log('Success!');
-  } else {
-    console.log('Denied!');
-  }
 };
 
 export const getTokensForAddressFromContract = (address, contractAddress) => async dispatch => {
@@ -62,8 +34,8 @@ export const getTokensForAddressFromContract = (address, contractAddress) => asy
   });
 };
 
-export const buyProduct = (productId, contractAddress, address) => async dispatch => {
-  const licenseId = await UjoLicensing.buyProduct(productId, address, contractAddress);
+export const buyProduct = (productId, contractAddress, address, indexOfAccount) => async dispatch => {
+  const licenseId = await UjoLicensing.buyProduct(productId, address, contractAddress, indexOfAccount);
   dispatch({
     type: 'PRODUCT_PURCHASE',
     address,
@@ -78,8 +50,8 @@ export const changeAddress = (newAddress, jwt) => ({
   jwt,
 });
 
-export const deployStore = address => async dispatch => {
-  const contractAddress = await UjoLicensing.deployNewStore(address);
+export const deployStore = (address, indexOfAccount) => async dispatch => {
+  const contractAddress = await UjoLicensing.deployNewStore(address, indexOfAccount);
 
   // Update address on server
   let res;
@@ -97,12 +69,12 @@ export const deployStore = address => async dispatch => {
   console.log(res);
 };
 
-export const login = ethAddress => async dispatch => {
+export const login = (ethAddress, index) => async dispatch => {
   try {
     const resp = await fetch.getLoginChallenge(ethAddress);
 
     const challenge = resp.data.challenge[1].value;
-    const signature = await UjoLicensing.signData(challenge, ethAddress);
+    const signature = await UjoLicensing.signData(challenge, index);
 
     const jwt = await fetch.login(challenge, signature);
     return jwt;
@@ -139,8 +111,8 @@ export const getProductsForContract = contractAddress => async dispatch => {
   });
 };
 
-export const createProduct = (productId, price, inventory, address, contractAddress) => async dispatch => {
-  const product = await UjoLicensing.createProduct(productId, price, inventory, address, contractAddress);
+export const createProduct = (productId, price, inventory, address, contractAddress, indexOfAccount) => async dispatch => {
+  const product = await UjoLicensing.createProduct(productId, price, inventory, address, contractAddress, indexOfAccount);
   console.log(product);
 
   dispatch({

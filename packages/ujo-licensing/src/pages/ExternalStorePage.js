@@ -18,13 +18,7 @@ import p7 from '../img/pexels7.jpeg';
 import p8 from '../img/pexels8.jpeg';
 import p9 from '../img/pexels9.jpeg';
 
-import {
-  getTokensForAddressFromContract,
-  deployStore,
-  createProduct,
-  getProductsForContract,
-  buyProduct,
-} from '../store/storeActions';
+import { getTokensForAddressFromContract, getProductsForContract, buyProduct } from '../store/storeActions';
 
 const photos = [p0, p1, p2, p3, p4, p5, p6, p7, p8, p9];
 
@@ -48,7 +42,7 @@ export class ExternalStorePage extends React.Component {
   }
 
   componentWillMount() {
-    this.props.getProductsForContract(this.props.match.params.storeId);
+    this.props.getProductsForContract(this.props.match.params.storeId, this.props.indexOfAccount);
   }
 
   componentDidMount() {
@@ -138,7 +132,7 @@ export class ExternalStorePage extends React.Component {
                   {numOwned === 0 && <div>You don't own a license yet.</div>}
                   <Button
                     onClick={() =>
-                      this.props.buyProduct(key, this.props.match.params.storeId, this.props.currentAccount)
+                      this.props.buyProduct(key, this.props.match.params.storeId, this.props.currentAccount, this.props.indexOfAccount)
                     }
                   >
                     Buy {numOwned > 0 && 'another'}
@@ -177,16 +171,17 @@ export default connect(
   (state, props) => {
     const products = state.store.getIn(['stores', props.match.params.storeId]);
     const purchases = state.store.getIn(['purchases', props.match.params.storeId]);
+    const accounts = state.store.getIn(['web3', 'accounts']);
     return {
       products: products || fromJS({}),
       currentAccount: state.store.get('currentAccount'),
       jwt: state.store.get('jwt'),
       purchases: purchases || fromJS([]),
+      accounts,
+      indexOfAccount: accounts.indexOf(state.store.get('currentAccount')),
     };
   },
   {
-    deployStore,
-    createProduct,
     getProductsForContract,
     getTokensForAddressFromContract,
     buyProduct,

@@ -7,14 +7,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
     "build-js": "browserify ./src/index.js | babel > ./dist/bundle.js",
+    "build-lc": "babel UjoLicensingClass/index.js -d dist/UjoLicensingClass && cp UjoLicensingClass/LicenseCore.json dist/UjoLicensingClass/",
     "watch": "webpack --watch",
-    "start": "node server.js",
+    "start": "npm run build-lc && node server.js",
     "dev": "webpack-dev-server"
   },
   "keywords": [],
   "author": "Alexander Attar <alexanderattar@gmail.com> (http://alexanderattar.com)",
   "license": "",
   "devDependencies": {
+    "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.4",
     "@babel/plugin-transform-runtime": "^7.5.5",
     "@babel/preset-env": "^7.5.4",
@@ -41,12 +43,13 @@
   "dependencies": {
     "@babel/polyfill": "^7.4.4",
     "axios": "^0.19.0",
-    "bignumber.js": "^4.0.0",
+    "bignumber.js": "^9.0.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^8.0.0",
     "eth-sig-util": "^1.4.2",
     "ethereumjs-util": "^6.1.0",
+    "ethers": "^4.0.33",
     "express": "^4.17.1",
     "express-jwt": "^5.3.1",
     "immutable": "^4.0.0-rc.12",
@@ -65,7 +68,6 @@
     "rimble-ui": "^0.9.5",
     "styled-components": "^4.3.2",
     "truffle-hdwallet-provider": "^1.0.13",
-    "uuid": "^3.3.2",
-    "web3": "1.0.0-beta.37"
+    "uuid": "^3.3.2"
   }
 }

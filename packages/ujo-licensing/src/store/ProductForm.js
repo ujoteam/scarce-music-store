@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/jsx-filename-extension */
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Button, Form } from 'rimble-ui';
 
@@ -23,9 +22,9 @@ export class ProductForm extends React.Component {
     const inventory = this.inventory.current.value;
     console.log(`id: ${id}, ${inventory}`);
 
-    const { currentAccount, currentStore } = this.props;
+    const { currentAccount, currentStore, indexOfAccount } = this.props;
 
-    this.props.createProduct(id, price, inventory, currentAccount, currentStore);
+    this.props.createProduct(id, price, inventory, currentAccount, currentStore, indexOfAccount);
   }
 
   render() {
@@ -36,7 +35,7 @@ export class ProductForm extends React.Component {
             type="text"
             required
             ref={this.id}
-            placeholder="ex. n39Dkcu39gsGo4Nnsye5sjRG"
+            placeholder="ex. 123"
             width={1}
             onChange={this.handleValidation}
           />
@@ -72,6 +71,7 @@ export class ProductForm extends React.Component {
 export default connect(
   state => ({
     currentAccount: state.store.get('currentAccount'),
+    indexOfAccount: state.store.getIn(['web3', 'accounts']).indexOf(state.store.get('currentAccount')),
   }),
   {
     createProduct,
