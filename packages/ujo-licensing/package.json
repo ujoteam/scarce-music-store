@@ -9,7 +9,7 @@
     "build-js": "browserify ./src/index.js | babel > ./dist/bundle.js",
     "build-lc": "babel UjoLicensingClass/index.js -d dist/UjoLicensingClass && cp UjoLicensingClass/LicenseCore.json dist/UjoLicensingClass/",
     "watch": "webpack --watch",
-    "start": "npm run build-lc && node server",
+    "start": "npm run build-lc && node ./server/index.js",
     "dev": "webpack-dev-server"
   },
   "keywords": [],

@@ -1,4 +1,4 @@
-require('dotenv/config')
+require('dotenv/config');
 const express = require('express');
 const Ethers = require('ethers');
 const HDWalletProvider = require('truffle-hdwallet-provider');
@@ -17,7 +17,7 @@ const path = require('path');
 const os = require('os');
 
 const ffmpeg = require('fluent-ffmpeg');
-const { pipeFileToS3 } = require('./s3')
+const { pipeFileToS3 } = require('./s3');
 
 AWS.config.update({
   region: process.env.AWS_DEFAULT_REGION,
@@ -32,7 +32,7 @@ const BUCKET_NAME = 'ujo-licensing-media';
 //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 // });
 
-const redis = require('./redis')
+const redis = require('./redis');
 const MetaAuth = require('../meta-auth');
 // const LicenseContract = require('../UjoLicensingClass/LicenseCore.json');
 const UjoLicensing = require('../dist/UjoLicensingClass');
@@ -49,7 +49,6 @@ const songs = [
   'https://freemusicarchive.org/file/music/WFMU/Lee_Rosevere/Blue_Dot_RMX/Lee_Rosevere_-_01_-_Sky_Chaser.mp3',
   'https://freemusicarchive.org/file/music/ccCommunity/Daniel_Birch/Music_For_Audio_Drama_Podcasts_Vol1/Daniel_Birch_-_07_-_Marimba_On_The_Loose.mp3',
 ];
-
 
 // development
 if (process.env.NODE_ENV !== 'production') {
@@ -74,7 +73,6 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 // cors
 app.use(cors());
-
 
 // jwt
 const JWT_SECRET = 'jwt secret @@TODO';
@@ -141,21 +139,21 @@ app.post('/auth', (req, res) => {
       if (userInfo[userAddress]) {
         return res.json(userInfo[userAddress]);
 
-      } else {
-        userInfo[userAddress] = [];
-        fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-        return res.json(userInfo[userAddress]);
       }
-
-    } else {
-      const userInfo = {};
       userInfo[userAddress] = [];
-      fs.mkdir('./server', err => {
-        if (err) throw err;
-        fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-        res.json(userInfo[userAddress]);
-      });
+      fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
+      return res.json(userInfo[userAddress]);
+
+
     }
+    const userInfo = {};
+    userInfo[userAddress] = [];
+    fs.mkdir('./server', err => {
+      if (err) throw err;
+      fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
+      res.json(userInfo[userAddress]);
+    });
+
   } catch (err) {
     console.log(err);
     res.status(500).send();
@@ -201,15 +199,15 @@ app.post('/upload', async (req, res) => {
       // In order to pipe our incoming fileStream into two consumers (raw S3 + ffmpeg->S3), we
       // have to create a PassThrough stream.  It seems that either AWS or ffmpeg is doing
       // something odd when reading the stream that necessitates this.
-      const tee = new require('stream').PassThrough()
-      fileStream.pipe(tee)
+      const tee = new require('stream').PassThrough();
+      fileStream.pipe(tee);
 
-      const previewFilename = path.basename(filename, path.extname(filename)) + '-preview.mp3'
-      const previewFile = ffmpeg(tee).format('mp3').duration(10).pipe()
-      return [
-        pipeFileToS3(fileStream, filename, BUCKET_NAME),
-        pipeFileToS3(previewFile, previewFilename, BUCKET_NAME),
-      ]
+      const previewFilename = `${path.basename(filename, path.extname(filename))}-preview.mp3`;
+      const previewFile = ffmpeg(tee)
+        .format('mp3')
+        .duration(10)
+        .pipe();
+      return [pipeFileToS3(fileStream, filename, BUCKET_NAME), pipeFileToS3(previewFile, previewFilename, BUCKET_NAME)];
     });
     const responses = await Promise.all(flatten(uploadOps));
 
@@ -227,6 +225,29 @@ app.post('/upload', async (req, res) => {
     console.log('finished receiving file uploads');
   });
   req.pipe(busboy);
+});
+
+//
+// Get files from S3
+//
+app.get('/stream/:key', async (req, res) => {
+  console.log('Getting file from S3', req.params.key);
+  const s3 = new AWS.S3({});
+  const params = { Bucket: BUCKET_NAME, Key: req.params.key };
+  const filepath = `${req.params.key}`;
+  const file = fs.createWriteStream(filepath);
+
+  try {
+    res.send(
+      s3
+        .getObject(params)
+        .createReadStream()
+        .pipe(file),
+    );
+  } catch (err) {
+    console.log('ERROR: ', err);
+    res.status(500);
+  }
 });
 
 //
@@ -270,7 +291,7 @@ app.post('/metadata/:productID', async (req, res) => {
   const { productID } = req.params;
   const metadata = await redis.setMetadata(productID, req.body);
   res.json({});
-})
+});
 
 //
 // Update the contract address
@@ -280,7 +301,6 @@ app.post('/update-address', (req, res) => {
   contractAddress = req.body.address;
   res.status(200).send();
 });
-
 
 app.get('/auth/:MetaAddress', metaAuth, (req, res) => {
   // Request a message from the server
