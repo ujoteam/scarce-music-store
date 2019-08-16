@@ -228,68 +228,78 @@ app.post('/upload', async (req, res) => {
 });
 
 //
-// Get files from S3
-//
-app.get('/stream/:key', async (req, res) => {
-  console.log('Getting file from S3', req.params.key);
-  const s3 = new AWS.S3({});
-  const params = { Bucket: BUCKET_NAME, Key: req.params.key };
-  const filepath = `${req.params.key}`;
-  const file = fs.createWriteStream(filepath);
-
-  try {
-    res.send(
-      s3
-        .getObject(params)
-        .createReadStream()
-        .pipe(file),
-    );
-  } catch (err) {
-    console.log('ERROR: ', err);
-    res.status(500);
-  }
-});
-
-//
 // Stream the given content.
 //
-app.get('/content/:contractAddress/:productID', async (req, res) => {
+app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => {
   const { ethAddress } = req.user;
-  const { contractAddress, productID } = req.params;
+  const { contractAddress, productID, trackIndex } = req.params;
+  const trackIdx = parseInt(trackIndex, 10);
 
-  const randomIndexToPlay = Math.floor(Math.random() * (songs.length - 0)) + 0;
+  const metadata = await redis.getMetadata(contractAddress, productID);
+  if (!metadata.tracks || trackIdx > metadata.tracks.length - 1) {
+    return res.status(404);
+  }
 
   let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
   productIds = productIds.map(id => id.toString());
 
+  let contentURL; // This will hold the 'key' (filename) of the content stored in S3 that we'll stream to the user
   if (productIds.indexOf(productID) === -1) {
-    return res.status(403);
+    // If the user doesn't own a license...
+    if (metadata.tracks[trackIdx].preview) {
+      // ...but there's a preview clip, stream that.
+      contentURL = metadata.tracks[trackIdx].preview;
+    } else {
+      // ...and there's no preview, return a 403 Forbidden.
+      return res.status(403);
+    }
+  } else {
+    // If the user DOES own a license, simply stream the content from S3.
+    contentURL = metadata.tracks[trackIdx].url;
   }
 
-  axios({
-    method: 'get',
-    url: songs[randomIndexToPlay],
-    responseType: 'stream',
-  }).then(response => {
-    response.data.pipe(res);
-  });
+  // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
+  // fetched via a URL.  We have to use the authenticated client.  We might support other 3rd party
+  // stores with their own auth schemes as well.
+
+  const contentURLParsed = require('url').parse(contentURL)
+  const s3ContentKey = contentURLParsed.path.slice(1)
+
+  try {
+    const s3 = new AWS.S3({});
+    const params = { Bucket: BUCKET_NAME, Key: s3ContentKey };
+    s3
+      .getObject(params)
+      .createReadStream()
+      .pipe(res)
+
+  } catch (err) {
+    console.log('ERROR: ', err);
+    res.status(500).json({ error: err.toString() });
+  }
 });
 
 //
 // Fetch metadata for the given productID
 //
-app.get('/metadata/:productID', async (req, res) => {
-  const { productID } = req.params;
-  const metadata = await redis.getMetadata(productID);
+app.get('/metadata/:contractAddress/:productID', async (req, res) => {
+  const { contractAddress, productID } = req.params;
+  const metadata = await redis.getMetadata(contractAddress, productID);
+  metadata.tracks = metadata.tracks || []
+
+  // Filter out details that the end user shouldn't be able to know
+  // @@TODO: if a content URL points elsewhere, rather than to our managed service, we probably
+  // shouldn't filter it out (?)
+  metadata.tracks = metadata.tracks.map(track = omit(track, ['url'])) // Filter out the hidden track URLs
   res.json(metadata);
 });
 
 //
 // Store metadata for the given productID
 //
-app.post('/metadata/:productID', async (req, res) => {
-  const { productID } = req.params;
-  const metadata = await redis.setMetadata(productID, req.body);
+app.post('/metadata/:contractAddress/:productID', async (req, res) => {
+  const { contractAddress, productID } = req.params;
+  const metadata = await redis.setMetadata(contractAddress, productID, req.body);
   res.json({});
 });
 

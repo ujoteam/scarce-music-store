@@ -147,11 +147,11 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
 
   // metadata
   console.log('releaseInfo', releaseInfo);
-  const random = Math.floor(Math.random() * 1000);
-  const res = await axios.post(`${serverAddress}/metadata/${random}`, releaseInfo);
+  const random = Math.floor(Math.random() * 1000000000);
+  const res = await axios.post(`${serverAddress}/metadata/${contractAddress}/${random}`, releaseInfo);
 
   // check metadata
-  const resp = await axios.get(`${serverAddress}/metadata/${random}`);
+  const resp = await axios.get(`${serverAddress}/metadata/${contractAddress}/${random}`);
 
   console.log('METADATA: ', resp.data);
 
