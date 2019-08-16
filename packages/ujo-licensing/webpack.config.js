@@ -14,6 +14,9 @@ module.exports = {
     compress: true,
     port: 3003,
     historyApiFallback: true,
+    proxy: {
+      '/upload': 'http://localhost:3001',
+    },
   },
   module: {
     rules: [

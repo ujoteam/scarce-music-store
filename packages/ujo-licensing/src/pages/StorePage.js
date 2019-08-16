@@ -6,7 +6,8 @@ import { Box, Button, Heading, Text, Table } from 'rimble-ui';
 import { fromJS } from 'immutable';
 
 import { createProduct, getProductsForContract } from '../store/storeActions';
-import NewProductForm from '../store/ProductForm';
+// import NewProductForm from '../store/ProductForm';
+import ReleaseForm from '../store/ReleaseForm';
 
 export class StorePage extends React.Component {
   componentWillMount() {
@@ -76,7 +77,8 @@ export class StorePage extends React.Component {
             fontWeight: 'bold',
             marginBottom: 16,
         }}>Create a New Product</Text>
-        <NewProductForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} />
+        <ReleaseForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} />
+        {/* <NewProductForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} /> */}
         <br />
         <br />
         <br />

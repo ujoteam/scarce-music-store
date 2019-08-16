@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-filename-extension */
 import React from 'react';
+import axios from 'axios'
 import { Link, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Box, Text, Button } from 'rimble-ui';
@@ -11,6 +12,7 @@ export class App extends React.Component {
     super(props);
     // create a ref to store the textInput DOM element
     this.account = React.createRef();
+    this.inputFile = React.createRef();
   }
 
   componentWillMount() {
@@ -47,6 +49,16 @@ export class App extends React.Component {
     // this.props.history.push('/');
   }
 
+  async onClickUpload() {
+    const formData = new FormData()
+    console.log('file ~>', this.inputFile.current.files[0])
+    formData.append('user-photo', this.inputFile.current.files[0])
+    const resp = await axios.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    console.log('resp ~>', resp.data)
+  }
+
   render() {
     const { accounts } = this.props;
     return (
@@ -66,6 +78,10 @@ export class App extends React.Component {
               ))}
             </select>
           </div>
+          <form action="/upload" method="post">
+              <input type="file" ref={this.inputFile} />
+              <button onClick={() => this.onClickUpload()}>Upload</button>
+          </form>
         </Box>
         {this.props.children}
       </div>

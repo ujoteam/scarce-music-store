@@ -122,3 +122,47 @@ export const createProduct = (productId, price, inventory, address, contractAddr
     product,
   });
 };
+
+const uploadContent = async file => {
+  const formData = new FormData();
+  console.log('file ~>', file);
+  formData.append('track', file);
+  const headers = { 'Content-Type': 'multipart/form-data' };
+
+  const trackLocations = await axios.post(`${serverAddress}/upload`, formData, { headers });
+  return trackLocations.data;
+};
+
+export const createScarceRelease = (releaseInfo, currentAccount, contractAddress, indexOfAccount) => async dispatch => {
+  // TODO: add fault tolerance
+  // content
+  const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file)));
+  console.log('trackLocations', trackLocations);
+
+  releaseInfo.tracks = releaseInfo.tracks.map((track, i) => ({
+    name: track.name,
+    url: trackLocations[i].original,
+    preview: trackLocations[i].preview,
+  }));
+
+  // metadata
+  console.log('releaseInfo', releaseInfo);
+  const random = Math.floor(Math.random() * 1000);
+  const res = await axios.post(`${serverAddress}/metadata/${random}`, releaseInfo);
+
+  // check metadata
+  const resp = await axios.get(`${serverAddress}/metadata/${random}`);
+
+  console.log('METADATA: ', resp.data);
+
+  // contract
+  const product = await UjoLicensing.createProduct(random, releaseInfo.price, releaseInfo.inventory, currentAccount, contractAddress, indexOfAccount);
+  console.log(product);
+
+  dispatch({
+    type: 'ADD_NEW_PRODUCT',
+    contractAddress,
+    productId: random,
+    product,
+  });
+};

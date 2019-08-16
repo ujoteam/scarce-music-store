@@ -1,3 +1,4 @@
+require('dotenv/config')
 const express = require('express');
 const Ethers = require('ethers');
 const HDWalletProvider = require('truffle-hdwallet-provider');
@@ -7,14 +8,37 @@ const cors = require('cors');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const expressJWT = require('express-jwt');
+const AWS = require('aws-sdk');
 
-const MetaAuth = require('./meta-auth');
-// const LicenseContract = require('./UjoLicensingClass/LicenseCore.json');
-const UjoLicensing = require('./dist/UjoLicensingClass');
+const toPairs = require('lodash/toPairs');
+const flatten = require('lodash/flatten');
+const Busboy = require('busboy');
+const path = require('path');
+const os = require('os');
+
+const ffmpeg = require('fluent-ffmpeg');
+const { pipeFileToS3 } = require('./s3')
+
+AWS.config.update({
+  region: process.env.AWS_DEFAULT_REGION,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
+
+const BUCKET_NAME = 'ujo-licensing-media';
+
+// const s3 = new AWS.S3({
+//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
+
+const redis = require('./redis')
+const MetaAuth = require('../meta-auth');
+// const LicenseContract = require('../UjoLicensingClass/LicenseCore.json');
+const UjoLicensing = require('../dist/UjoLicensingClass');
 
 // ES6 quirk. could be fixed by transpiling everything
 const UjoLicense = new UjoLicensing.default();
-
 
 const songs = [
   'https://freemusicarchive.org/file/music/no_curator/spectacular/What_Whas_That/spectacular_-_01_-_What_Was_That_Spectacular_Sound_Productions.mp3',
@@ -26,12 +50,13 @@ const songs = [
   'https://freemusicarchive.org/file/music/ccCommunity/Daniel_Birch/Music_For_Audio_Drama_Podcasts_Vol1/Daniel_Birch_-_07_-_Marimba_On_The_Loose.mp3',
 ];
 
+
 // development
 if (process.env.NODE_ENV !== 'production') {
   // contractAddress = '';
-//   web3 = new Ethers.providers.JsonRpcProvider();
-// } else {
-//   UjoLicensing = new LicensingHelper();
+  //   web3 = new Ethers.providers.JsonRpcProvider();
+  // } else {
+  //   UjoLicensing = new LicensingHelper();
   // UjoLicensing.init();
   // production
   // contractAddress = '';
@@ -41,6 +66,7 @@ if (process.env.NODE_ENV !== 'production') {
   // web3 = new Ethers(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
 }
 
+redis.init();
 const port = process.env.PORT || '3001';
 const app = express();
 app.use(bodyParser.json()); // support json encoded bodies
@@ -48,6 +74,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 // cors
 app.use(cors());
+
 
 // jwt
 const JWT_SECRET = 'jwt secret @@TODO';
@@ -73,8 +100,10 @@ const metaAuth = new MetaAuth({
 
 app.use('/', express.static('.'));
 
+//
+// Authentication, step 1.  Request a challenge message from the server which will be signed by the user.
+//
 app.get('/login/:MetaAddress', metaAuth, (req, res) => {
-  // Request a message from the server
   if (req.metaAuth && req.metaAuth.challenge) {
     res.send({ challenge: req.metaAuth.challenge });
   } else {
@@ -82,6 +111,10 @@ app.get('/login/:MetaAddress', metaAuth, (req, res) => {
   }
 });
 
+//
+// Authentication, step 2.  Recovers the user's ETH address from the signed challenge, and sets
+// a JWT that identifies the user for subsequent requests.
+//
 app.get('/login/:MetaMessage/:MetaSignature', metaAuth, async (req, res) => {
   if (req.metaAuth && req.metaAuth.recovered) {
     const ethAddress = req.metaAuth.recovered;
@@ -93,6 +126,9 @@ app.get('/login/:MetaMessage/:MetaSignature', metaAuth, async (req, res) => {
   }
 });
 
+//
+// Fetch the list of stores deployed by the current user.
+//
 app.post('/auth', (req, res) => {
   const userAddress = req.body.address;
 
@@ -102,12 +138,15 @@ app.post('/auth', (req, res) => {
       let userInfo = JSON.parse(cont);
       userInfo = Object.assign({}, userInfo); // not sure why I need this
 
-      if (userInfo[userAddress]) res.json(userInfo[userAddress]);
-      else {
+      if (userInfo[userAddress]) {
+        return res.json(userInfo[userAddress]);
+
+      } else {
         userInfo[userAddress] = [];
         fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-        res.json(userInfo[userAddress]);
+        return res.json(userInfo[userAddress]);
       }
+
     } else {
       const userInfo = {};
       userInfo[userAddress] = [];
@@ -123,6 +162,9 @@ app.post('/auth', (req, res) => {
   }
 });
 
+//
+// Tell the backend that you've deployed a store contract.
+//
 app.post('/deploy-store', (req, res) => {
   const userAddress = req.body.address;
   const storeAddress = req.body.contractAddress;
@@ -139,6 +181,57 @@ app.post('/deploy-store', (req, res) => {
   }
 });
 
+//
+// Upload new content.
+//
+app.post('/upload', async (req, res) => {
+  const busboy = new Busboy({
+    headers: req.headers,
+    limits: {
+      files: 1,
+      fileSize: process.env.MAX_UPLOAD_SIZE || 10 * 1024 * 1024, // default to 10mb max upload size
+    },
+  });
+
+  const response = { fileStreams: {}, otherFields: {} };
+  busboy.on('file', async (fieldname, fileStream, origFilename, encoding, mimetype) => {
+    response.fileStreams[origFilename] = fileStream;
+
+    const uploadOps = toPairs(response.fileStreams).map(([filename, fileStream]) => {
+      // In order to pipe our incoming fileStream into two consumers (raw S3 + ffmpeg->S3), we
+      // have to create a PassThrough stream.  It seems that either AWS or ffmpeg is doing
+      // something odd when reading the stream that necessitates this.
+      const tee = new require('stream').PassThrough()
+      fileStream.pipe(tee)
+
+      const previewFilename = path.basename(filename, path.extname(filename)) + '-preview.mp3'
+      const previewFile = ffmpeg(tee).format('mp3').duration(10).pipe()
+      return [
+        pipeFileToS3(fileStream, filename, BUCKET_NAME),
+        pipeFileToS3(previewFile, previewFilename, BUCKET_NAME),
+      ]
+    });
+    const responses = await Promise.all(flatten(uploadOps));
+
+    for (const resp of responses) {
+      console.log('Uploaded file URL:', resp.Location);
+      // @@TODO: store these URLs in the product metadata
+    }
+
+    res.status(200).json({ original: responses[0].Location, preview: responses[1].Location });
+  });
+  busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
+    response.otherFields[fieldname] = val;
+  });
+  busboy.on('finish', () => {
+    console.log('finished receiving file uploads');
+  });
+  req.pipe(busboy);
+});
+
+//
+// Stream the given content.
+//
 app.get('/content/:contractAddress/:productID', async (req, res) => {
   const { ethAddress } = req.user;
   const { contractAddress, productID } = req.params;
@@ -161,6 +254,34 @@ app.get('/content/:contractAddress/:productID', async (req, res) => {
   });
 });
 
+//
+// Fetch metadata for the given productID
+//
+app.get('/metadata/:productID', async (req, res) => {
+  const { productID } = req.params;
+  const metadata = await redis.getMetadata(productID);
+  res.json(metadata);
+});
+
+//
+// Store metadata for the given productID
+//
+app.post('/metadata/:productID', async (req, res) => {
+  const { productID } = req.params;
+  const metadata = await redis.setMetadata(productID, req.body);
+  res.json({});
+})
+
+//
+// Update the contract address
+//
+app.post('/update-address', (req, res) => {
+  console.log('Updating contract address', req.body.address);
+  contractAddress = req.body.address;
+  res.status(200).send();
+});
+
+
 app.get('/auth/:MetaAddress', metaAuth, (req, res) => {
   // Request a message from the server
   if (req.metaAuth && req.metaAuth.challenge) {
@@ -168,12 +289,6 @@ app.get('/auth/:MetaAddress', metaAuth, (req, res) => {
   } else {
     res.status(500);
   }
-});
-
-app.post('/update-address', (req, res) => {
-  console.log('Updating contract address', req.body.address);
-  contractAddress = req.body.address;
-  res.status(200).send();
 });
 
 app.get('/auth/:MetaMessage/:MetaSignature/:contractAddress', metaAuth, async (req, res) => {
