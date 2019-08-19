@@ -4,6 +4,7 @@ import axios from 'axios'
 import { Link, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Box, Text, Button } from 'rimble-ui';
+import ReactAudioPlayer from 'react-audio-player';
 
 import { initWeb3, changeAddress, login, authenticate } from '../store/storeActions';
 
@@ -53,10 +54,15 @@ export class App extends React.Component {
     const formData = new FormData()
     console.log('file ~>', this.inputFile.current.files[0])
     formData.append('user-photo', this.inputFile.current.files[0])
-    const resp = await axios.post('/upload', formData, {
+    let resp = await axios.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     })
     console.log('resp ~>', resp.data)
+    const { original, preview } = resp.data
+    let contractAddress = '0xdeadbeef'
+    let productID = '1234'
+    resp = await axios.post(`/metadata/${contractAddress}/${productID}`, { tracks: [ { name: 'My track', url: original, preview } ] })
+    console.log('metadata resp ~>', resp)
   }
 
   render() {
@@ -82,6 +88,11 @@ export class App extends React.Component {
               <input type="file" ref={this.inputFile} />
               <button onClick={() => this.onClickUpload()}>Upload</button>
           </form>
+          <ReactAudioPlayer
+                        src={`http://localhost:3001/content/0xdeadbeef/1234/0` /* @@TODO: track '0' is hard-coded here, make it selectable */}
+                        controls
+                        onError={err => console.error('AUDIO ERR ~>', err)}
+                      />
         </Box>
         {this.props.children}
       </div>
