@@ -18,16 +18,16 @@ async function init() {
     return client
 }
 
-async function getMetadata(productID) {
-    const metadataJSON = await client.hgetAsync('metadata', productID)
+async function getMetadata(contractAddress, productID) {
+    const metadataJSON = await client.hgetAsync('metadata', contractAddress + ':' + productID)
     if (metadataJSON) {
         return JSON.parse(metadataJSON)
     }
     return null
 }
 
-async function setMetadata(productID, metadata) {
-    await client.hsetAsync('metadata', productID, JSON.stringify(metadata))
+async function setMetadata(contractAddress, productID, metadata) {
+    await client.hsetAsync('metadata', contractAddress + ':' + productID, JSON.stringify(metadata))
 }
 
 async function clearAll() {

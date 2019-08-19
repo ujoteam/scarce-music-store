@@ -148,11 +148,11 @@ app.post('/auth', (req, res) => {
     }
     const userInfo = {};
     userInfo[userAddress] = [];
-    fs.mkdir('./server', err => {
-      if (err) throw err;
-      fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
+    // fs.mkdir('./server', err => {
+    //   if (err) throw err;
+    //   fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
       res.json(userInfo[userAddress]);
-    });
+    // });
 
   } catch (err) {
     console.log(err);
@@ -231,20 +231,25 @@ app.post('/upload', async (req, res) => {
 // Stream the given content.
 //
 app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => {
-  const { ethAddress } = req.user;
+  const ethAddress = req.user ? req.user.ethAddress : null
   const { contractAddress, productID, trackIndex } = req.params;
   const trackIdx = parseInt(trackIndex, 10);
+    console.log('CONTENT ROUTE', {ethAddress, contractAddress, productID, trackIndex})
 
   const metadata = await redis.getMetadata(contractAddress, productID);
   if (!metadata.tracks || trackIdx > metadata.tracks.length - 1) {
     return res.status(404);
   }
 
-  let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
-  productIds = productIds.map(id => id.toString());
+  let userOwnsLicense = false
+  if (ethAddress) {
+    let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
+    productIds = productIds.map(id => id.toString());
+    userOwnsLicense = productIds.indexOf(productID) > -1
+  }
 
   let contentURL; // This will hold the 'key' (filename) of the content stored in S3 that we'll stream to the user
-  if (productIds.indexOf(productID) === -1) {
+  if (!userOwnsLicense) {
     // If the user doesn't own a license...
     if (metadata.tracks[trackIdx].preview) {
       // ...but there's a preview clip, stream that.
