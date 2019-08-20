@@ -36,6 +36,7 @@ const redis = require('./redis');
 const MetaAuth = require('../meta-auth');
 // const LicenseContract = require('../UjoLicensingClass/LicenseCore.json');
 const UjoLicensing = require('../dist/UjoLicensingClass');
+const ERC20 = require('../UjoLicensingClass/ERC20.json')
 
 // ES6 quirk. could be fixed by transpiling everything
 const UjoLicense = new UjoLicensing.default(new Ethers.providers.JsonRpcProvider('http://localhost:8545'));
@@ -331,20 +332,28 @@ app.get('/faucet', asyncMW(async (req, res, next) => {
   }
 
   const { ethAddress } = req.user
-  // const daiContractInstance = new Ethers.Contract(process.env.DAI_CONTRACT_ADDRESS, ERC20.abi, UjoLicense.provider.getSigner(0))
-  const amount = parseFloat(req.query.amount || '1.0')
-  const maxFaucetSendAmount = parseFloat(process.env.MAX_FAUCET_SEND_AMOUNT || '1.0')
+  const backendWallet = Ethers.Wallet.fromMnemonic(process.env.ETH_MNEMONIC).connect(UjoLicense.provider)
 
-  // If the user already has enough ETH, don't do anything.
-  const balance = await UjoLicense.provider.getBalance(ethAddress)
-  const maxAmount = Ethers.utils.parseEther(`${maxFaucetSendAmount}`)
-  if (balance.gte( maxAmount )) {
-      return res.status(200).json({ result: 'you have plenty of ETH already', address: ethAddress, balance: Ethers.utils.formatEther(balance) })
+  const ethMax = Ethers.utils.parseEther(process.env.MAX_FAUCET_ETH_AMOUNT || '1.0')
+  const daiMax = parseFloat(process.env.MAX_FAUCET_DAI_AMOUNT || '10000')
+
+  const ethBalance = await UjoLicense.provider.getBalance(ethAddress)
+  if (ethBalance.lt( ethMax )) {
+    const weiToSend = ethMax.sub(ethBalance)
+    const ethTx = await backendWallet.sendTransaction({ to: ethAddress, value: weiToSend })
+    console.log('ethTx ~>', ethTx)
   }
 
-  const weiToSend = Ethers.utils.parseEther(Math.min(amount, maxFaucetSendAmount).toString())
-  const wallet = Ethers.Wallet.fromMnemonic(process.env.ETH_MNEMONIC).connect(UjoLicense.provider)
-  const tx = await wallet.sendTransaction({ to: ethAddress, value: weiToSend })
+
+  const daiContractInstance = new Ethers.Contract(process.env.DAI_CONTRACT_ADDRESS, ERC20.abi, backendWallet);
+  const daiBalance = await daiContractInstance.balanceOf(ethAddress)
+  if (daiBalance.lt( daiMax )) {
+    const daiToSend = daiMax.sub(daiBalance)
+    const daiTx = await daiContractInstance.transfer(ethAddress, daiToSend)
+    console.log('daiTx ~>', daiTx)
+  }
+
+  console.log('DAI bal ~>', (await daiContractInstance.balanceOf(ethAddress)).toString())
 
   return res.status(200).json({ result: 'sent you some ETH' })
 }))
