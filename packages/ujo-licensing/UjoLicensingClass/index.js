@@ -9,14 +9,10 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ethUtil = require('ethereumjs-util');
 
 class UjoLicensing {
-  constructor(opts) {
-    // TODO: pass in RPCProvicer
-    // if (typeof opts !== 'object') throw new Error(constructorError);
-
+  constructor(provider) {
+    this.provider = provider || new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
     this.contractInstances = {};
-    this.provider = {};
 
-    this.init();
     /**
      * Adds a 5% boost to the gas for web3 calls as to ensure tx's go through
      *
@@ -26,8 +22,10 @@ class UjoLicensing {
       const gasBoost = new BigNumber(estimatedGas, 10).div(new BigNumber('20')).integerValue(BigNumber.ROUND_DOWN);
       return new BigNumber(estimatedGas, 10).plus(gasBoost).integerValue(BigNumber.ROUND_DOWN);
     };
+
     // TODO: in the future it should accept a signer not an index!
     this.signData = async (data, index) => this.provider.getSigner(index).signMessage(data);
+
     this.recoverAddressFromSignedData = (data, sig) => {
       const msg = ethUtil.bufferToHex(Buffer.from(data, 'utf8'));
       const params = { data: msg, sig };
@@ -41,6 +39,7 @@ class UjoLicensing {
       }
       return address;
     };
+
     this.normalizeProductValues = product => ({
       inventory: product.inventory.toNumber(),
       interval: product.interval.toNumber(),
@@ -48,11 +47,6 @@ class UjoLicensing {
       totalSupply: product.totalSupply.toNumber(),
       renewable: product.renewable,
     })
-  }
-
-  init() {
-    // const provider = (web3 !== undefined) ? web3.currentProvider : new Web3.providers.HttpProvider('http://127.0.0.1:8545');
-    this.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
   }
 
   initializeContractIfNotExist(contractAddress, indexOfAccount) {

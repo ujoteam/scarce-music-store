@@ -28,5 +28,8 @@ export const login = async (challenge, signature) => {
   return jwt
 }
 
-
+export const requestFaucet = async () => {
+  const resp = await axios.get(`${serverAddress}/faucet`, { headers: getHeaders() })
+  console.log('faucet resp ~>', resp.data)
+}
 

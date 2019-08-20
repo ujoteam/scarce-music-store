@@ -1,3 +1,4 @@
+import { ethers } from 'ethers'
 import axios from 'axios';
 import LicensingHelper from '../../UjoLicensingClass';
 import * as fetch from '../fetch';
@@ -8,14 +9,17 @@ let UjoLicensing;
 
 // actions
 export const initWeb3 = () => async dispatch => {
-  UjoLicensing = new LicensingHelper();
-  // UjoLicensing.init();
-  // use Metamask, et al. if available
-  // If no injected web3 instance is detected, fallback to Ganache CLI.
-  // TODO: fix hard-coding to ganache-cli web3
-  // const provider = (web3 !== undefined) ? web3.currentProvider : new Web3.providers.HttpProvider('http://127.0.0.1:8545');
-  // const accounts = await UjoLicensing.web3.eth.getAccounts();
-  const accounts = await Promise.all(Array.from(Array(10)).map(async (item, i) => await UjoLicensing.provider.getSigner(i).getAddress()));
+  let provider
+  let accounts
+  if (window.ethereum) {
+    provider = new ethers.providers.Web3Provider(window.ethereum)
+    accounts = await window.ethereum.enable()
+  } else {
+    throw new Error(`We haven't implemented anything but Metamask yet`)
+  }
+
+  UjoLicensing = new LicensingHelper(provider);
+
   console.log('accounts', accounts);
   dispatch({
     type: 'WEB3_INIT',

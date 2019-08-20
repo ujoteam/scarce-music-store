@@ -7,6 +7,7 @@ import { Box, Text, Button } from 'rimble-ui';
 import ReactAudioPlayer from 'react-audio-player';
 
 import { initWeb3, changeAddress, login, authenticate } from '../store/storeActions';
+import { requestFaucet } from '../fetch'
 
 export class App extends React.Component {
   constructor(props) {
@@ -23,6 +24,7 @@ export class App extends React.Component {
   componentDidMount() {
     const { currentAccount } = this.props;
     this.props.authenticate(currentAccount);
+    requestFaucet()
   }
 
   componentDidUpdate(prevProps) {

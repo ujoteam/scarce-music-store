@@ -18,6 +18,8 @@ module.exports = {
       '/upload': 'http://localhost:3001',
       '/metadata': 'http://localhost:3001',
       '/content': 'http://localhost:3001',
+      '/login': 'http://localhost:3001',
+      '/faucet': 'http://localhost:3001',
     },
   },
   module: {

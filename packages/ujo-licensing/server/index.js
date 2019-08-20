@@ -1,7 +1,7 @@
 require('dotenv/config');
 const express = require('express');
 const Ethers = require('ethers');
-const HDWalletProvider = require('truffle-hdwallet-provider');
+// const HDWalletProvider = require('truffle-hdwallet-provider');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const cors = require('cors');
@@ -38,7 +38,7 @@ const MetaAuth = require('../meta-auth');
 const UjoLicensing = require('../dist/UjoLicensingClass');
 
 // ES6 quirk. could be fixed by transpiling everything
-const UjoLicense = new UjoLicensing.default();
+const UjoLicense = new UjoLicensing.default(new Ethers.providers.JsonRpcProvider('http://localhost:8545'));
 
 const songs = [
   'https://freemusicarchive.org/file/music/no_curator/spectacular/What_Whas_That/spectacular_-_01_-_What_Was_That_Spectacular_Sound_Productions.mp3',
@@ -92,11 +92,12 @@ app.use(
   }),
 );
 
-const metaAuth = new MetaAuth({
-  banner: 'Ujo Licensing',
-});
+// Set up some middleware
+const metaAuth = new MetaAuth({ banner: 'Ujo Licensing' });
+const asyncMW = fn => (req, res, next) => { Promise.resolve(fn(req, res, next)).catch(next) }
 
 app.use('/', express.static('.'));
+
 
 //
 // Authentication, step 1.  Request a challenge message from the server which will be signed by the user.
@@ -326,7 +327,37 @@ app.get('/auth/:MetaMessage/:MetaSignature/:contractAddress', metaAuth, async (r
   }
 });
 
+//
+// Replenish the requesting user's ETH + DAI
+//
+app.get('/faucet', asyncMW(async (req, res, next) => {
+  console.log('faucet route', req.user)
+  if (!req.user) {
+    return res.status(403).json({})
+  }
+
+  const { ethAddress } = req.user
+  // const daiContractInstance = new Ethers.Contract(process.env.DAI_CONTRACT_ADDRESS, ERC20.abi, UjoLicense.provider.getSigner(0))
+  const amount = parseFloat(req.query.amount || '1.0')
+  const maxFaucetSendAmount = parseFloat(process.env.MAX_FAUCET_SEND_AMOUNT || '1.0')
+
+  // If the user already has enough ETH, don't do anything.
+  const balance = await UjoLicense.provider.getBalance(ethAddress)
+  const maxAmount = Ethers.utils.parseEther(`${maxFaucetSendAmount}`)
+  if (balance.gte( maxAmount )) {
+      return res.status(200).json({ result: 'you have plenty of ETH already', address: ethAddress, balance: Ethers.utils.formatEther(balance) })
+  }
+
+  const weiToSend = Ethers.utils.parseEther(Math.min(amount, maxFaucetSendAmount).toString())
+  const wallet = Ethers.Wallet.fromMnemonic(process.env.ETH_MNEMONIC).connect(UjoLicense.provider)
+  const tx = await wallet.sendTransaction({ to: ethAddress, value: weiToSend })
+
+  return res.status(200).json({ result: 'sent you some ETH' })
+}))
+
+//
 // Error handler
+//
 app.use((err, req, res, next) => {
   console.error(err);
   console.log(next);
