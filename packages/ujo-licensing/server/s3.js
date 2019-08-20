@@ -15,7 +15,7 @@ async function pipeFileToS3(filestream, filename, bucket) {
 
             s3.upload()
                 .on('httpUploadProgress', e => {
-                    console.log(e);
+                    console.log('s3 httpUploadProgress', e);
                 })
                 .send((err, data) => {
                     if (err) {

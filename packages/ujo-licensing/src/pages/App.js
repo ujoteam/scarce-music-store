@@ -50,19 +50,24 @@ export class App extends React.Component {
     // this.props.history.push('/');
   }
 
-  async onClickUpload() {
+  async onClickUpload(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
     const formData = new FormData()
-    console.log('file ~>', this.inputFile.current.files[0])
-    formData.append('user-photo', this.inputFile.current.files[0])
-    let resp = await axios.post('/upload', formData, {
+    let i = 0
+    for (let file of this.inputFile.current.files) {
+        formData.append('uploads' + i, file)
+        i++
+    }
+    let resp = await axios.post('/upload/0xdeadbeef/1234', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     })
     console.log('resp ~>', resp.data)
-    const { original, preview } = resp.data
-    let contractAddress = '0xdeadbeef'
-    let productID = '1234'
-    resp = await axios.post(`/metadata/${contractAddress}/${productID}`, { tracks: [ { name: 'My track', url: original, preview } ] })
-    console.log('metadata resp ~>', resp)
+    // const { original, preview } = resp.data
+    // let contractAddress = '0xdeadbeef'
+    // let productID = '1234'
+    // resp = await axios.post(`/metadata/${contractAddress}/${productID}`, { tracks: [ { name: 'My track', url: original, preview } ] })
+    // console.log('metadata resp ~>', resp)
   }
 
   render() {
@@ -84,10 +89,10 @@ export class App extends React.Component {
               ))}
             </select>
           </div>
-          <form action="/upload" method="post">
-              <input type="file" ref={this.inputFile} />
-              <button onClick={() => this.onClickUpload()}>Upload</button>
-          </form>
+          <div>
+              <input type="file" ref={this.inputFile} multiple />
+              <button onClick={(evt) => this.onClickUpload(evt)}>Upload</button>
+          </div>
           <ReactAudioPlayer
                         src={`http://localhost:3001/content/0xdeadbeef/1234/0` /* @@TODO: track '0' is hard-coded here, make it selectable */}
                         controls

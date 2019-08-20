@@ -182,59 +182,49 @@ app.post('/deploy-store', (req, res) => {
 //
 // Upload new content.
 //
-app.post('/upload', async (req, res) => {
+app.post('/upload/:contractAddress/:productID', async (req, res) => {
+  const { contractAddress, productID } = req.params;
+
   const busboy = new Busboy({
     headers: req.headers,
     limits: {
-      files: 1,
-      fileSize: process.env.MAX_UPLOAD_SIZE || 10 * 1024 * 1024, // default to 10mb max upload size
+      // files: 1,
+      fileSize: process.env.MAX_UPLOAD_SIZE || 30 * 1024 * 1024, // default to 30mb max upload size
     },
   });
 
-  const response = { fileStreams: {}, otherFields: {} };
-  busboy.on('file', async (fieldname, fileStream, origFilename, encoding, mimetype) => {
-    response.fileStreams[origFilename] = fileStream;
+  const uploadOps = [];
+  busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
+    const trackIndex = uploadOps.length / 2;
 
-    const uploadOps = toPairs(response.fileStreams).map(([filename, fileStream]) => {
-      // In order to pipe our incoming fileStream into two consumers (raw S3 + ffmpeg->S3), we
-      // have to create a PassThrough stream.  It seems that either AWS or ffmpeg is doing
-      // something odd when reading the stream that necessitates this.
-      const tee1 = new require('stream').PassThrough();
-      const tee2 = new require('stream').PassThrough();
-      fileStream.pipe(tee1);
-      fileStream.pipe(tee2);
+    const originalFilename = `${contractAddress}/${productID}/${trackIndex}.mp3`;
+    const originalFile = ffmpeg(fileStream)
+      .format('mp3')
+      .pipe();
 
-      const originalFilename = `${path.basename(filename, path.extname(filename))}.mp3`;
-      const originalFile = ffmpeg(tee1)
-        .format('mp3')
-        .pipe()
+    const previewFilename = `${contractAddress}/${productID}/${trackIndex}-preview.mp3`;
+    const previewFile = ffmpeg(originalFile)
+      .format('mp3')
+      .duration(10)
+      .pipe();
 
-      const previewFilename = `${path.basename(filename, path.extname(filename))}-preview.mp3`;
-      const previewFile = ffmpeg(tee2)
-        .format('mp3')
-        .duration(10)
-        .pipe()
-
-      return [
-        pipeFileToS3(originalFile, originalFilename, BUCKET_NAME),
-        pipeFileToS3(previewFile, previewFilename, BUCKET_NAME),
-      ];
-    });
-    const responses = await Promise.all(flatten(uploadOps));
-
-    for (const resp of responses) {
-      console.log('Uploaded file URL:', resp.Location);
-      // @@TODO: store these URLs in the product metadata
-    }
-
-    res.status(200).json({ original: responses[0].Location, preview: responses[1].Location });
+    uploadOps.push( pipeFileToS3(originalFile, originalFilename, BUCKET_NAME) );
+    uploadOps.push( pipeFileToS3(previewFile, previewFilename, BUCKET_NAME) );
   });
+
   busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
-    response.otherFields[fieldname] = val;
+    // ...
   });
-  busboy.on('finish', () => {
+
+  busboy.on('finish', async () => {
     console.log('finished receiving file uploads');
+
+    await Promise.all(uploadOps);
+    console.log('S3 uploads complete.')
+
+    return res.json({});
   });
+
   req.pipe(busboy);
 });
 
