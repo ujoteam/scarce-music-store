@@ -1,9 +1,13 @@
-import "@babel/polyfill";
+import '@babel/polyfill';
 import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import sigUtil from 'eth-sig-util';
 
-import LicenseContract from './LicenseCore.json';
+import LicenseCore from './LicenseCore.json';
+import LicenseSale from './LicenseSale.json';
+import LicenseInventory from './LicenseInventory.json';
+import LicenseOwnership from './LicenseOwnership.json';
+import ERC20 from './ERC20.json';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ethUtil = require('ethereumjs-util');
@@ -46,14 +50,18 @@ class UjoLicensing {
       price: product.price.toNumber(),
       totalSupply: product.totalSupply.toNumber(),
       renewable: product.renewable,
-    })
+    });
   }
 
-  initializeContractIfNotExist(contractAddress, indexOfAccount) {
+  initializeContractIfNotExist(contractJSON, contractAddress, indexOfAccount) {
     if (!this.contractInstances[indexOfAccount]) this.contractInstances[indexOfAccount] = {};
     const inStorage = this.contractInstances[indexOfAccount][contractAddress];
     if (inStorage) return inStorage;
-    const ContractInstance = new ethers.Contract(contractAddress, LicenseContract.abi, this.provider.getSigner(indexOfAccount));
+    const ContractInstance = new ethers.Contract(
+      contractAddress,
+      contractJSON.abi,
+      this.provider.getSigner(indexOfAccount),
+    );
     this.contractInstances[indexOfAccount][contractAddress] = ContractInstance;
     return this.contractInstances[indexOfAccount][contractAddress];
   }
@@ -74,9 +82,26 @@ class UjoLicensing {
   // console.log('licenseProductId("0")', licenseProductId);
   // ////////////////////////////////////
 
+  // TODO - Need to deploy all the contracts here
   async deployNewStore(address, indexOfAccount) {
     console.log('Attempting to deploy from account', address);
-    const factory = new ethers.ContractFactory(LicenseContract.abi, LicenseContract.bytecode, this.provider.getSigner(indexOfAccount));
+    const saleFactory = new ethers.ContractFactory(
+      LicenseSale.abi,
+      LicenseSale.bytecode,
+      this.provider.getSigner(indexOfAccount),
+    );
+
+    const inventoryFactory = new ethers.ContractFactory(
+      LicenseInventory.abi,
+      LicenseInventory.bytecode,
+      this.provider.getSigner(indexOfAccount),
+    );
+
+    const ownershipFactory = new ethers.ContractFactory(
+      LicenseOwnership.abi,
+      LicenseOwnership.bytecode,
+      this.provider.getSigner(indexOfAccount),
+    );
 
     // TODO: ethers gasEstimation is waayyyy off - https://github.com/ethers-io/ethers.js/issues/194
     // const estimatedGas = await this.provider.estimateGas(factory.deploy)
@@ -84,13 +109,25 @@ class UjoLicensing {
     // newGas = ethers.utils.hexlify(Number(newGas));
     // const result = await factory.deploy({ gasLimit: newGas });
 
-    const result = await factory.deploy();
-    console.log('Contract deployed to', result.address);
-    return result.address;
+    const saleResult = await saleFactory.deploy();
+    const inventoryResult = await inventoryFactory.deploy();
+    const ownershipResult = await ownershipFactory.deploy();
+    console.log('Sale Contract deployed to', saleResult.address);
+    console.log('Inventory Contract deployed to', inventoryResult.address);
+    console.log('Ownership Contract deployed to', ownershipResult.address);
+
+    const result = {
+      LicenseSale: saleResult.address,
+      LicenseInventory: inventoryResult.address,
+      LicenseOwnership: ownershipResult.address,
+    };
+
+    console.log(result);
+    return result;
   }
 
   async createProduct(id, price, inventory, address, contractAddress, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
     const firstProduct = {
       id,
       price,
@@ -110,25 +147,32 @@ class UjoLicensing {
     // //   ));
     // const gas = this.boostGas(estimatedGas);
 
-    const obj = await ContractInstance.createProduct(firstProduct.id, firstProduct.price, firstProduct.initialInventory, firstProduct.supply, firstProduct.interval);
+    const obj = await ContractInstance.createProduct(
+      firstProduct.id,
+      firstProduct.price,
+      firstProduct.initialInventory,
+      firstProduct.supply,
+      firstProduct.interval,
+    );
 
     let product = await ContractInstance.productInfo(firstProduct.id);
-    product = this.normalizeProductValues(product)
+    product = this.normalizeProductValues(product);
 
     return Object.assign({ productId: id }, product);
   }
 
   async getOwnedProductIds(address, contractAddress, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    const ContractInstance = this.initializeContractIfNotExist(LicenseOwnership, contractAddress, indexOfAccount);
     const tokensOf = await ContractInstance.tokensOf(address);
+    const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddress, indexOfAccount);
     const asyncDataFetch = async () =>
-      Promise.all(tokensOf.map(async tokenIndex => ContractInstance.licenseProductId(tokenIndex)));
+      Promise.all(tokensOf.map(async tokenIndex => LicenseSaleInstance.licenseProductId(tokenIndex)));
     const productIds = await asyncDataFetch();
     return productIds.map(bn => bn.toNumber());
   }
 
   async getProductsForContract(contractAddress, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
     let productIds = await ContractInstance.getAllProductIds();
     productIds = productIds.map(bn => bn.toNumber());
 
@@ -144,7 +188,6 @@ class UjoLicensing {
     let soldData = await asyncSoldDataFetch();
     soldData = soldData.map(bn => bn.toNumber());
 
-
     return {
       productIds,
       productData,
@@ -153,9 +196,15 @@ class UjoLicensing {
   }
 
   async buyProduct(productId, address, contractAddress, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(contractAddress, indexOfAccount);
+    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
     const productInfo = await ContractInstance.productInfo(productId);
-    const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS, { value: productInfo.price });
+
+    const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddress, indexOfAccount);
+
+    // TODO - Import ERC20
+    const ERC20Instance = this.initializeContractIfNotExist(ERC20, contractAddress, indexOfAccount);
+    await ERC20Instance.approve(LicenseSaleInstance.address, productInfo.price);
+    const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS);
 
     // const gas = this.boostGas(estimatedGas);
     // const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS)
@@ -168,7 +217,6 @@ class UjoLicensing {
     // TODO: need to error handle
     return license.value.toNumber();
   }
-
 }
 
 export default UjoLicensing;

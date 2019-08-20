@@ -21,10 +21,10 @@ const reducer = (state = fromJS(initialState), action) => {
         return v;
       });
     case 'DEPLOY_STORE':
-      return state.setIn(['stores', action.address, action.contractAddress], fromJS({}));
+      return state.setIn(['stores', action.address, action.contractAddresses], fromJS({}));
     case 'ADD_NEW_PRODUCT':
       return state.updateIn(
-        ['stores', action.contractAddress],
+        ['stores', action.contractAddresses],
         v => v.set(action.productId, fromJS(Object.assign(action.product, { totalSold: 0 }))),
         // v.push(Object.assign(action.product, { id: action.productId })),
       );

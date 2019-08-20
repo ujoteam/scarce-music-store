@@ -6,7 +6,7 @@ import { Box, Button, Heading, Text, Table } from 'rimble-ui';
 import { fromJS } from 'immutable';
 
 import { createProduct, getProductsForContract } from '../store/storeActions';
-// import NewProductForm from '../store/ProductForm';
+import NewProductForm from '../store/ProductForm';
 import ReleaseForm from '../store/ReleaseForm';
 
 export class StorePage extends React.Component {
@@ -26,16 +26,24 @@ export class StorePage extends React.Component {
     const productKeys = products.keySeq().toArray();
     return (
       <Box p={30}>
-        <div style={{display: 'flex'}}>
-          <Heading>Store {match.params.storeId.slice(0, 8)}...</Heading>
-          <div style={{flexGrow: 1}}></div>
-          <Link to={`/some-store/${match.params.storeId}`} style={{
-              display: 'block',
-              textDecoration: 'none',
-              float: 'right',
-              marginBottom: 20,
-          }}>
-              <Button>View user-facing store</Button>
+        <div style={{ display: 'flex' }}>
+          <Heading>
+Store
+{' '}
+{match.params.storeId.slice(0, 8)}
+...
+</Heading>
+          <div style={{ flexGrow: 1 }} />
+          <Link
+to={`/some-store/${match.params.storeId}`}
+style={{
+            display: 'block',
+            textDecoration: 'none',
+            float: 'right',
+            marginBottom: 20,
+          }}
+          >
+            <Button>View user-facing store</Button>
           </Link>
         </div>
         <br />
@@ -72,13 +80,18 @@ export class StorePage extends React.Component {
           </tbody>
         </Table>
 
-        <Text style={{
+        <Text
+          style={{
             fontSize: '1.3rem',
             fontWeight: 'bold',
             marginBottom: 16,
-        }}>Create a New Product</Text>
-        <ReleaseForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} />
-        {/* <NewProductForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} /> */}
+          }}
+        >
+          Create a New Product
+        
+        </Text>
+        {/* <ReleaseForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} /> */}
+        <NewProductForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} />
         <br />
         <br />
         <br />

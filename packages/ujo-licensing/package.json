@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
     "build-js": "browserify ./src/index.js | babel > ./dist/bundle.js",
-    "build-lc": "babel UjoLicensingClass/index.js -d dist/UjoLicensingClass && cp UjoLicensingClass/LicenseCore.json dist/UjoLicensingClass/",
+    "build-lc": "babel UjoLicensingClass/index.js -d dist/UjoLicensingClass && cp UjoLicensingClass/LicenseCore.json dist/UjoLicensingClass/ && cp UjoLicensingClass/LicenseSale.json dist/UjoLicensingClass/ && cp UjoLicensingClass/LicenseInventory.json dist/UjoLicensingClass/ && cp UjoLicensingClass/LicenseOwnership.json dist/UjoLicensingClass/ && cp UjoLicensingClass/ERC20.json dist/UjoLicensingClass/",
     "watch": "webpack --watch",
     "start": "npm run build-lc && node ./server/index.js",
     "dev": "webpack-dev-server"

@@ -139,22 +139,18 @@ app.post('/auth', (req, res) => {
 
       if (userInfo[userAddress]) {
         return res.json(userInfo[userAddress]);
-
       }
       userInfo[userAddress] = [];
       fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
       return res.json(userInfo[userAddress]);
-
-
     }
     const userInfo = {};
     userInfo[userAddress] = [];
     // fs.mkdir('./server', err => {
     //   if (err) throw err;
     //   fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-      res.json(userInfo[userAddress]);
+    res.json(userInfo[userAddress]);
     // });
-
   } catch (err) {
     console.log(err);
     res.status(500).send();
@@ -166,7 +162,7 @@ app.post('/auth', (req, res) => {
 //
 app.post('/deploy-store', (req, res) => {
   const userAddress = req.body.address;
-  const storeAddress = req.body.contractAddress;
+  const { contractAddresses } = req.body;
 
   const cont = fs.readFileSync('./server/db.json', 'utf8');
   let userInfo = JSON.parse(cont);
@@ -174,7 +170,7 @@ app.post('/deploy-store', (req, res) => {
 
   if (!userInfo[userAddress]) res.status(500).json({ error: 'we could not find your user account' });
   else {
-    userInfo[userAddress].push(storeAddress);
+    userInfo[userAddress].push(contractAddresses);
     fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
     res.status(200).send();
   }
@@ -209,8 +205,8 @@ app.post('/upload/:contractAddress/:productID', async (req, res) => {
       .duration(10)
       .pipe();
 
-    uploadOps.push( pipeFileToS3(originalFile, originalFilename, BUCKET_NAME) );
-    uploadOps.push( pipeFileToS3(previewFile, previewFilename, BUCKET_NAME) );
+    uploadOps.push(pipeFileToS3(originalFile, originalFilename, BUCKET_NAME));
+    uploadOps.push(pipeFileToS3(previewFile, previewFilename, BUCKET_NAME));
   });
 
   busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
@@ -221,7 +217,7 @@ app.post('/upload/:contractAddress/:productID', async (req, res) => {
     console.log('finished receiving file uploads');
 
     await Promise.all(uploadOps);
-    console.log('S3 uploads complete.')
+    console.log('S3 uploads complete.');
 
     return res.json({});
   });
@@ -233,15 +229,15 @@ app.post('/upload/:contractAddress/:productID', async (req, res) => {
 // Stream the given content.
 //
 app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => {
-  const ethAddress = req.user ? req.user.ethAddress : null
+  const ethAddress = req.user ? req.user.ethAddress : null;
   const { contractAddress, productID, trackIndex } = req.params;
   const { download } = req.query;
 
-  let userOwnsLicense = false
+  let userOwnsLicense = false;
   if (ethAddress) {
     let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
     productIds = productIds.map(id => id.toString());
-    userOwnsLicense = productIds.indexOf(productID) > -1
+    userOwnsLicense = productIds.indexOf(productID) > -1;
   }
 
   // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
@@ -260,11 +256,9 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
   try {
     const s3 = new AWS.S3({});
     const params = { Bucket: BUCKET_NAME, Key: s3ContentKey };
-    s3
-      .getObject(params)
+    s3.getObject(params)
       .createReadStream()
-      .pipe(res)
-
+      .pipe(res);
   } catch (err) {
     console.log('ERROR: ', err);
     res.status(500).json({ error: err.toString() });
@@ -277,12 +271,12 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
 app.get('/metadata/:contractAddress/:productID', async (req, res) => {
   const { contractAddress, productID } = req.params;
   const metadata = await redis.getMetadata(contractAddress, productID);
-  metadata.tracks = metadata.tracks || []
+  metadata.tracks = metadata.tracks || [];
 
   // Filter out details that the end user shouldn't be able to know
   // @@TODO: if a content URL points elsewhere, rather than to our managed service, we probably
   // shouldn't filter it out (?)
-  metadata.tracks = metadata.tracks.map(track = omit(track, ['url'])) // Filter out the hidden track URLs
+  metadata.tracks = metadata.tracks.map((track = omit(track, ['url']))); // Filter out the hidden track URLs
   res.json(metadata);
 });
 

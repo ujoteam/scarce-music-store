@@ -55,17 +55,17 @@ export const changeAddress = (newAddress, jwt) => ({
 });
 
 export const deployStore = (address, indexOfAccount) => async dispatch => {
-  const contractAddress = await UjoLicensing.deployNewStore(address, indexOfAccount);
+  const contractAddresses = await UjoLicensing.deployNewStore(address, indexOfAccount);
 
   // Update address on server
   let res;
   try {
     // should add a new contract to the user
-    res = await axios.post(`${serverAddress}/deploy-store`, { address, contractAddress });
+    res = await axios.post(`${serverAddress}/deploy-store`, { address, contractAddresses });
     dispatch({
       type: 'DEPLOY_STORE',
       address,
-      contractAddress,
+      contractAddresses,
     });
   } catch (error) {
     console.log(error);
@@ -115,8 +115,22 @@ export const getProductsForContract = contractAddress => async dispatch => {
   });
 };
 
-export const createProduct = (productId, price, inventory, address, contractAddress, indexOfAccount) => async dispatch => {
-  const product = await UjoLicensing.createProduct(productId, price, inventory, address, contractAddress, indexOfAccount);
+export const createProduct = (
+  productId,
+  price,
+  inventory,
+  address,
+  contractAddress,
+  indexOfAccount,
+) => async dispatch => {
+  const product = await UjoLicensing.createProduct(
+    productId,
+    price,
+    inventory,
+    address,
+    contractAddress,
+    indexOfAccount,
+  );
   console.log(product);
 
   dispatch({
@@ -160,7 +174,14 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
   console.log('METADATA: ', resp.data);
 
   // contract
-  const product = await UjoLicensing.createProduct(random, releaseInfo.price, releaseInfo.inventory, currentAccount, contractAddress, indexOfAccount);
+  const product = await UjoLicensing.createProduct(
+    random,
+    releaseInfo.price,
+    releaseInfo.inventory,
+    currentAccount,
+    contractAddress,
+    indexOfAccount,
+  );
   console.log(product);
 
   dispatch({
