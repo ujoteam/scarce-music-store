@@ -236,14 +236,6 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
   const { contractAddress, productID, trackIndex } = req.params;
   const { download } = req.query;
 
-  const trackIdx = parseInt(trackIndex, 10);
-    console.log('CONTENT ROUTE', {ethAddress, contractAddress, productID, trackIndex})
-
-  const metadata = await redis.getMetadata(contractAddress, productID);
-  if (!metadata.tracks || trackIdx > metadata.tracks.length - 1) {
-    return res.status(404);
-  }
-
   let userOwnsLicense = false
   if (ethAddress) {
     let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
@@ -251,31 +243,17 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
     userOwnsLicense = productIds.indexOf(productID) > -1
   }
 
-  let contentURL; // This will hold the 'key' (filename) of the content stored in S3 that we'll stream to the user
-  if (!userOwnsLicense) {
-    // If the user doesn't own a license...
-    if (metadata.tracks[trackIdx].preview) {
-      // ...but there's a preview clip, stream that.
-      contentURL = metadata.tracks[trackIdx].preview;
-    } else {
-      // ...and there's no preview, return a 403 Forbidden.
-      return res.status(403);
-    }
-  } else {
-    // If the user DOES own a license, simply stream the content from S3.
-    contentURL = metadata.tracks[trackIdx].url;
-  }
-
   // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
   // fetched via a URL.  We have to use the authenticated client.  We might support other 3rd party
   // stores with their own auth schemes as well.
 
-  const contentURLParsed = require('url').parse(contentURL)
-  const s3ContentKey = contentURLParsed.path.slice(1)
+  const s3ContentKey = userOwnsLicense
+    ? `${contractAddress}/${productID}/${trackIndex}.mp3`
+    : `${contractAddress}/${productID}/${trackIndex}-preview.mp3`;
 
   if (download) {
-    res.setHeader('Content-Type', 'audio/mpeg')
-    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(s3ContentKey)}"`)
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(s3ContentKey)}"`);
   }
 
   try {
