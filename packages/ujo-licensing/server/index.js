@@ -199,15 +199,26 @@ app.post('/upload', async (req, res) => {
       // In order to pipe our incoming fileStream into two consumers (raw S3 + ffmpeg->S3), we
       // have to create a PassThrough stream.  It seems that either AWS or ffmpeg is doing
       // something odd when reading the stream that necessitates this.
-      const tee = new require('stream').PassThrough();
-      fileStream.pipe(tee);
+      const tee1 = new require('stream').PassThrough();
+      const tee2 = new require('stream').PassThrough();
+      fileStream.pipe(tee1);
+      fileStream.pipe(tee2);
+
+      const originalFilename = `${path.basename(filename, path.extname(filename))}.mp3`;
+      const originalFile = ffmpeg(tee1)
+        .format('mp3')
+        .pipe()
 
       const previewFilename = `${path.basename(filename, path.extname(filename))}-preview.mp3`;
-      const previewFile = ffmpeg(tee)
+      const previewFile = ffmpeg(tee2)
         .format('mp3')
         .duration(10)
-        .pipe();
-      return [pipeFileToS3(fileStream, filename, BUCKET_NAME), pipeFileToS3(previewFile, previewFilename, BUCKET_NAME)];
+        .pipe()
+
+      return [
+        pipeFileToS3(originalFile, originalFilename, BUCKET_NAME),
+        pipeFileToS3(previewFile, previewFilename, BUCKET_NAME),
+      ];
     });
     const responses = await Promise.all(flatten(uploadOps));
 
