@@ -233,6 +233,8 @@ app.post('/upload', async (req, res) => {
 app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => {
   const ethAddress = req.user ? req.user.ethAddress : null
   const { contractAddress, productID, trackIndex } = req.params;
+  const { download } = req.query;
+
   const trackIdx = parseInt(trackIndex, 10);
     console.log('CONTENT ROUTE', {ethAddress, contractAddress, productID, trackIndex})
 
@@ -269,6 +271,11 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
 
   const contentURLParsed = require('url').parse(contentURL)
   const s3ContentKey = contentURLParsed.path.slice(1)
+
+  if (download) {
+    res.setHeader('Content-Type', 'audio/mpeg')
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(s3ContentKey)}"`)
+  }
 
   try {
     const s3 = new AWS.S3({});
