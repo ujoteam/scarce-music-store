@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-filename-extension */
 import React, { useEffect } from 'react';
 
 import Track from './TrackFields';

@@ -12,6 +12,7 @@ const AWS = require('aws-sdk');
 
 const toPairs = require('lodash/toPairs');
 const flatten = require('lodash/flatten');
+const omit = require('lodash/omit');
 const Busboy = require('busboy');
 const path = require('path');
 const os = require('os');
@@ -259,7 +260,7 @@ app.get('/metadata/:contractAddress/:productID', async (req, res) => {
   // Filter out details that the end user shouldn't be able to know
   // @@TODO: if a content URL points elsewhere, rather than to our managed service, we probably
   // shouldn't filter it out (?)
-  metadata.tracks = metadata.tracks.map((track = omit(track, ['url']))); // Filter out the hidden track URLs
+  metadata.tracks = metadata.tracks.map(track => omit(track, ['url'])); // Filter out the hidden track URLs
   res.json(metadata);
 });
 

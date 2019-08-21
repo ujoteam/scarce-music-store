@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-filename-extension */
 import React from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
@@ -64,7 +63,7 @@ style={{
             {productKeys.map(key => (
               <tr key={key}>
                 <td>
-                  <Link to={`/admin/store/${currentStore}/${key}`}>
+                  <Link to={`/release/${this.props.match.params.storeId}/${key}`}>
                     <span>{key}</span>
                   </Link>
                 </td>

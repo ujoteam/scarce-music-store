@@ -168,10 +168,9 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
   const random = Math.floor(Math.random() * 1000000000);
   const res = await axios.post(`${serverAddress}/metadata/${contractAddress}/${random}`, releaseInfo);
 
-  // check metadata
-  const resp = await axios.get(`${serverAddress}/metadata/${contractAddress}/${random}`);
-
-  console.log('METADATA: ', resp.data);
+  // // check metadata
+  // const resp = await axios.get(`${serverAddress}/metadata/${contractAddress}/${random}`);
+  // console.log('METADATA: ', resp.data);
 
   // contract
   const product = await UjoLicensing.createProduct(
@@ -189,5 +188,14 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
     contractAddress,
     productId: random,
     product,
+  });
+};
+
+export const getReleaseInfo = (releaseId, contractAddress) => async dispatch => {
+  const res = await axios.get(`${serverAddress}/metadata/${contractAddress}/${releaseId}`);
+  dispatch({
+    type: 'RELEASE_INFO',
+    releaseInfo: res.data,
+    releaseId,
   });
 };

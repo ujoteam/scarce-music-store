@@ -1,0 +1,9 @@
+export { default as BasicSVG } from './BasicSVG';
+export { default as SVGIconContainer } from './SVGIconContainer';
+export { default as Next } from './Next';
+export { default as Pause } from './Pause';
+export { default as Play } from './Play';
+export { default as SoundLow } from './SoundLow';
+export { default as SoundOn } from './SoundOn';
+export { default as SoundOff } from './SoundOff';
+export { default as Previous } from './Previous';

@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-filename-extension */
 import React from 'react';
 import axios from 'axios'
 import { Link, withRouter } from 'react-router-dom';
@@ -6,6 +5,7 @@ import { connect } from 'react-redux';
 import { Box, Text, Button } from 'rimble-ui';
 import ReactAudioPlayer from 'react-audio-player';
 
+import MediaPlayerContainer from '../components/MediaPlayer/MediaPlayerContainer';
 import { initWeb3, changeAddress, login, getUserStoreContracts } from '../store/storeActions';
 import { requestFaucet } from '../fetch'
 
@@ -92,16 +92,17 @@ export class App extends React.Component {
             </select>
           </div>
           <div>
-              <input type="file" ref={this.inputFile} multiple />
-              <button onClick={(evt) => this.onClickUpload(evt)}>Upload</button>
+            <input type="file" ref={this.inputFile} multiple />
+            <button onClick={(evt) => this.onClickUpload(evt)}>Upload</button>
           </div>
           <ReactAudioPlayer
-                        src={`http://localhost:3001/content/0xdeadbeef/1234/0` /* @@TODO: track '0' is hard-coded here, make it selectable */}
-                        controls
-                        onError={err => console.error('AUDIO ERR ~>', err)}
-                      />
+            src={`http://localhost:3001/content/0xdeadbeef/1234/0` /* @@TODO: track '0' is hard-coded here, make it selectable */}
+            controls
+            onError={err => console.error('AUDIO ERR ~>', err)}
+          />
         </Box>
         {this.props.children}
+        <MediaPlayerContainer />
       </div>
     );
   }

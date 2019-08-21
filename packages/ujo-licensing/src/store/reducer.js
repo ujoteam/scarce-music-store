@@ -53,6 +53,9 @@ const reducer = (state = fromJS(initialState), action) => {
     case 'VERIFY_OWNERSHIP':
       // return state.updateIn(['purchases', action.contractAddress], (v = fromJS([])) => v.push(action.verified));
       return state;
+    case 'RELEASE_INFO':
+      return state.setIn(['releases', action.releaseId], fromJS(action.releaseInfo))
+                  .setIn(['releases', action.releaseId, 'id'], action.releaseId);
     default:
       return state;
   }

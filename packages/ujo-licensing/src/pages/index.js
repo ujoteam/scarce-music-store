@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-filename-extension */
 /* eslint-disable react/prefer-stateless-function */
 import React from 'react';
 import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
@@ -21,7 +20,7 @@ export default class AppRoutes extends React.Component {
             <Route exact path="/developers" component={DeveloperPage} />
             <Route path="/some-store/:storeId" component={ExternalStorePage} />
             <Route path="/admin/store/:storeId" component={StorePage} />
-            <Route path="/release" component={ReleasePage} />
+            <Route path="/release/:storeId/:releaseId" component={ReleasePage} />
             <Route exact path="/" component={HomePage} />
             <Redirect to="/" />
           </Switch>

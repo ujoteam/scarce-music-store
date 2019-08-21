@@ -7,6 +7,7 @@ const storeInitialState = {
     accounts: [],
   },
   purchases: {},
+  releases: {},
 };
 
 export default storeInitialState;

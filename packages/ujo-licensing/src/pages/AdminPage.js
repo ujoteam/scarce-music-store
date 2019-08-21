@@ -1,10 +1,9 @@
-/* eslint-disable react/jsx-filename-extension */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Box, Button, Heading, Text, EthAddress } from 'rimble-ui';
-import Jdenticon from './Jdenticon';
 
+import Jdenticon from '../components/Utils/Jdenticon';
 import { initWeb3, getUserStoreContracts, deployStore } from '../store/storeActions';
 
 import './AdminPage.css'
