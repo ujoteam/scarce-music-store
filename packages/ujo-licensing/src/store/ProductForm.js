@@ -21,9 +21,9 @@ export class ProductForm extends React.Component {
     const inventory = this.inventory.current.value;
     console.log(`id: ${id}, ${inventory}`);
 
-    const { currentAccount, currentStore, indexOfAccount } = this.props;
+    const { currentAccount, currentStore, indexOfAccount, licensingContractAddress } = this.props;
 
-    this.props.createProduct(id, price, inventory, currentAccount, currentStore, indexOfAccount);
+    this.props.createProduct(id, price, inventory, currentAccount, currentStore, licensingContractAddress, indexOfAccount);
   }
 
   render() {

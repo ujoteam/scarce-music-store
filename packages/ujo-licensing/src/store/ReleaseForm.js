@@ -56,9 +56,9 @@ export class ReleaseForm extends React.Component {
 
     console.log('releaseInfo', releaseInfo);
 
-    const { currentAccount, currentStore, indexOfAccount } = this.props;
+    const { currentAccount, licensingContractAddress, currentStore, indexOfAccount } = this.props;
 
-    this.props.createScarceRelease(releaseInfo, currentAccount, currentStore, indexOfAccount);
+    this.props.createScarceRelease(releaseInfo, currentAccount, licensingContractAddress, currentStore, indexOfAccount);
   }
 
   render() {
@@ -74,6 +74,7 @@ export class ReleaseForm extends React.Component {
                 placeholder="Artist Name"
                 width={1}
                 onChange={this.handleValidation}
+                value="Mapping"
               />
             </Form.Field>
           </Box>
@@ -86,6 +87,7 @@ export class ReleaseForm extends React.Component {
                 placeholder="Release Name"
                 width={1}
                 onChange={this.handleValidation}
+                value="Schlappy"
               />
             </Form.Field>
           </Box>
@@ -109,6 +111,7 @@ export class ReleaseForm extends React.Component {
                 placeholder="in USD"
                 width={1}
                 onChange={this.handleValidation}
+                value={2}
               />
             </Form.Field>
           </Box>
@@ -121,6 +124,7 @@ export class ReleaseForm extends React.Component {
                 placeholder="0 represents an infinite amount"
                 width={1}
                 onChange={this.handleValidation}
+                value={100}
               />
             </Form.Field>
           </Box>
@@ -133,6 +137,7 @@ export class ReleaseForm extends React.Component {
                 placeholder="Record Label"
                 width={1}
                 onChange={this.handleValidation}
+                value="Gerpling"
               />
             </Form.Field>
           </Box>
@@ -155,6 +160,7 @@ export class ReleaseForm extends React.Component {
                 ref={this.description}
                 width={1}
                 onChange={this.handleValidation}
+                value="Great"
               />
             </Form.Field>
           </Box>

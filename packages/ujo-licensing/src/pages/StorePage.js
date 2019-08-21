@@ -9,8 +9,9 @@ import NewProductForm from '../store/ProductForm';
 import ReleaseForm from '../store/ReleaseForm';
 
 export class StorePage extends React.Component {
-  componentWillMount() {
-    this.props.getProductsForContract(this.props.match.params.storeId, this.props.indexOfAccount);
+  componentDidMount() {
+    const { licensingContract, currentStore, currentAccount, indexOfAccount } = this.props;
+    this.props.getProductsForContract(licensingContract, currentStore, currentAccount, indexOfAccount);
   }
 
   componentDidUpdate(prevProps) {
@@ -21,26 +22,23 @@ export class StorePage extends React.Component {
   }
 
   render() {
-    const { products, currentStore, match } = this.props;
+    const { products, currentStore, licensingContract, match, storeName } = this.props;
     const productKeys = products.keySeq().toArray();
     return (
       <Box p={30}>
         <div style={{ display: 'flex' }}>
           <Heading>
-Store
-{' '}
-{match.params.storeId.slice(0, 8)}
-...
-</Heading>
+            Store: {storeName}
+          </Heading>
           <div style={{ flexGrow: 1 }} />
           <Link
-to={`/some-store/${match.params.storeId}`}
-style={{
-            display: 'block',
-            textDecoration: 'none',
-            float: 'right',
-            marginBottom: 20,
-          }}
+            to={`/some-store/${match.params.storeId}`}
+            style={{
+              display: 'block',
+              textDecoration: 'none',
+              float: 'right',
+              marginBottom: 20,
+            }}
           >
             <Button>View user-facing store</Button>
           </Link>
@@ -87,10 +85,9 @@ style={{
           }}
         >
           Create a New Product
-        
         </Text>
-        {/* <ReleaseForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} /> */}
-        <NewProductForm currentStore={currentStore} indexOfAccount={this.props.indexOfAccount} />
+        <ReleaseForm currentStore={currentStore} licensingContractAddress={licensingContract} indexOfAccount={this.props.indexOfAccount} />
+        {/* <NewProductForm currentStore={currentStore} licensingContractAddress={licensingContract} indexOfAccount={this.props.indexOfAccount} /> */}
         <br />
         <br />
         <br />
@@ -111,17 +108,19 @@ style={{
 export default withRouter(
   connect(
     (state, props) => {
-      // const contracts = state.store.get('stores').keySeq().toArray();
-      const products = state.store.getIn(['stores', props.match.params.storeId]);
+      const currentAccount = state.store.get('currentAccount');
+      const storeInfo = state.store.getIn(['stores', currentAccount, props.match.params.storeId]);
       const accounts = state.store.getIn(['web3', 'accounts']);
       return {
-        products: products || fromJS({}),
+        products: storeInfo && storeInfo.get('products') ? storeInfo.get('products') : fromJS({}),
         accounts: state.store.getIn(['web3', 'accounts']),
-        currentAccount: state.store.get('currentAccount'),
+        currentAccount,
+        licensingContract: storeInfo ? storeInfo.get('LicenseInventory') : null,
+        storeName: storeInfo ? storeInfo.get('name') : null,
         // stores: contracts.length ? contracts : [],
         currentStore: props.match.params.storeId,
         accounts,
-        indexOfAccount: accounts.indexOf(state.store.get('currentAccount')),
+        indexOfAccount: accounts.indexOf(currentAccount),
       };
     },
     {

@@ -54,9 +54,11 @@ export const changeAddress = (newAddress, jwt) => ({
   jwt,
 });
 
-export const deployStore = (address, indexOfAccount) => async dispatch => {
+export const deployStore = (address, indexOfAccount, name) => async dispatch => {
   const contractAddresses = await UjoLicensing.deployNewStore(address, indexOfAccount);
-
+  const random = Math.floor(Math.random() * 1000000000);
+  contractAddresses.id = random.toString();
+  contractAddresses.name = name;
   // Update address on server
   let res;
   try {
@@ -66,6 +68,7 @@ export const deployStore = (address, indexOfAccount) => async dispatch => {
       type: 'DEPLOY_STORE',
       address,
       contractAddresses,
+      name,
     });
   } catch (error) {
     console.log(error);
@@ -103,7 +106,7 @@ export const getUserStoreContracts = address => async dispatch => {
   console.log(res);
 };
 
-export const getProductsForContract = contractAddress => async dispatch => {
+export const getProductsForContract = (contractAddress, storeId, ethAddress) => async dispatch => {
   const { productIds, productData, soldData } = await UjoLicensing.getProductsForContract(contractAddress);
 
   dispatch({
@@ -112,6 +115,8 @@ export const getProductsForContract = contractAddress => async dispatch => {
     productIds,
     productData,
     soldData,
+    storeId,
+    ethAddress,
   });
 };
 
@@ -120,6 +125,7 @@ export const createProduct = (
   price,
   inventory,
   address,
+  storeId,
   contractAddress,
   indexOfAccount,
 ) => async dispatch => {
@@ -136,37 +142,45 @@ export const createProduct = (
   dispatch({
     type: 'ADD_NEW_PRODUCT',
     contractAddress,
+    storeId,
     productId,
     product,
   });
 };
 
-const uploadContent = async file => {
+const uploadContent = async (files, storeId, productId) => {
   const formData = new FormData();
-  console.log('file ~>', file);
-  formData.append('track', file);
+  // formData.append('track', file);
+  files.map((file, i) => {
+    console.log('file ~>', file);
+    formData.append(`track-${i}`, file);
+  });
   const headers = { 'Content-Type': 'multipart/form-data' };
 
-  const trackLocations = await axios.post(`${serverAddress}/upload`, formData, { headers });
+  const trackLocations = await axios.post(`${serverAddress}/upload/${storeId}/${productId}`, formData, { headers });
   return trackLocations.data;
 };
 
-export const createScarceRelease = (releaseInfo, currentAccount, contractAddress, indexOfAccount) => async dispatch => {
+export const createScarceRelease = (releaseInfo, currentAccount, contractAddress, storeId, indexOfAccount) => async dispatch => {
+  // create random ID for storage purposes
+  const random = Math.floor(Math.random() * 1000000000);
   // TODO: add fault tolerance
   // content
-  const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file)));
+  const files = [];
+  releaseInfo.tracks.map(track => { files.push(track.file) });
+  const trackLocations = await uploadContent(files, storeId, random);
+  // const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file, storeId, random)));
   console.log('trackLocations', trackLocations);
 
   releaseInfo.tracks = releaseInfo.tracks.map((track, i) => ({
     name: track.name,
-    url: trackLocations[i].original,
-    preview: trackLocations[i].preview,
+    // url: trackLocations[i].original,
+    // preview: trackLocations[i].preview,
   }));
 
   // metadata
   console.log('releaseInfo', releaseInfo);
-  const random = Math.floor(Math.random() * 1000000000);
-  const res = await axios.post(`${serverAddress}/metadata/${contractAddress}/${random}`, releaseInfo);
+  const res = await axios.post(`${serverAddress}/metadata/${storeId}/${random}`, releaseInfo);
 
   // // check metadata
   // const resp = await axios.get(`${serverAddress}/metadata/${contractAddress}/${random}`);
@@ -188,6 +202,8 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
     contractAddress,
     productId: random,
     product,
+    currentAccount,
+    storeId,
   });
 };
 

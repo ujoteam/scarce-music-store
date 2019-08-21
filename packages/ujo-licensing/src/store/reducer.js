@@ -13,19 +13,19 @@ const reducer = (state = fromJS(initialState), action) => {
       console.log('action.contractAddresses', action.contractAddresses);
       return state.set('authenticated', true).update('stores', (v = fromJS({})) => {
         v = v.update(action.address, (val = fromJS({})) => {
-          action.contractAddresses.map(add => {
-            val = val.set(add, fromJS({}));
+          action.contractAddresses.map(addses => {
+            val = val.set(addses.id, fromJS(addses));
           });
           return val;
         });
         return v;
       });
     case 'DEPLOY_STORE':
-      return state.setIn(['stores', action.address, action.contractAddresses], fromJS({}));
+      return state.setIn(['stores', action.address, action.contractAddresses.id], fromJS(action.contractAddresses));
     case 'ADD_NEW_PRODUCT':
       return state.updateIn(
-        ['stores', action.contractAddresses],
-        v => v.set(action.productId, fromJS(Object.assign(action.product, { totalSold: 0 }))),
+        ['stores', action.currentAccount, action.storeId, 'products'],
+        (v = fromJS({})) => v.set(action.productId, fromJS(Object.assign(action.product, { totalSold: 0 }))),
         // v.push(Object.assign(action.product, { id: action.productId })),
       );
     case 'CHANGED_ADDRESS':
@@ -38,7 +38,7 @@ const reducer = (state = fromJS(initialState), action) => {
           .update('purchases', v => v.map((val, k) => fromJS([])))
       );
     case 'STORE_PRODUCT_INFO':
-      return state.updateIn(['stores', action.contractAddress], (v = fromJS({})) => {
+      return state.updateIn(['stores', action.ethAddress, action.storeId, 'products'], (v = fromJS({})) => {
         action.productIds.map((id, i) => {
           v = v.set(id, fromJS(Object.assign({}, action.productData[i]))); // needed because web3 returns a 'Result' object??
           v = v.setIn([id, 'totalSold'], action.soldData[i]);

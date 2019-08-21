@@ -1,7 +1,8 @@
 import React from 'react';
+import { fromJS } from 'immutable';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Box, Button, Heading, Text, EthAddress } from 'rimble-ui';
+import { Box, Button, Heading, Text, EthAddress, Form } from 'rimble-ui';
 
 import Jdenticon from '../components/Utils/Jdenticon';
 import { initWeb3, getUserStoreContracts, deployStore } from '../store/storeActions';
@@ -9,12 +10,14 @@ import { initWeb3, getUserStoreContracts, deployStore } from '../store/storeActi
 import './AdminPage.css'
 
 export class AdminPage extends React.Component {
-  componentDidMount() {
-    // this.props.initWeb3();
+  constructor(props) {
+    super(props);
+    this.storeName = React.createRef();
   }
 
   render() {
     const indexOfAccount = this.props.accounts.indexOf(this.props.currentAccount);
+
     return (
       <Box p={30}>
         <Heading>Welcome to the tour</Heading>
@@ -31,20 +34,27 @@ export class AdminPage extends React.Component {
         <br />
         <br />
         <br />
-        {this.props.stores.map(add => (
-          <Link key={add} to={`/admin/store/${add}`} style={{ textDecoration: 'none', color: 'black' }}>
-            <Box style={{
+        {this.props.stores.map(addses => (
+          <Link
+            key={addses.get('LicenseSale')}
+            to={`/admin/store/${addses.get('id')}`}
+            style={{ textDecoration: 'none', color: 'black' }}
+          >
+            <span>{addses.get('name')}</span>
+            <Box
+              className="store"
+              style={{
                 border: '1px solid rgb(218, 218, 218)',
                 marginTop: 40,
                 display: 'flex',
                 padding: 16,
                 borderRadius: 5,
-            }} className="store">
-              <Jdenticon seed={add} size={64} style={{ marginRight: 16 }} />
-              <Heading>
-                Store Id:
-                <EthAddress truncate address={add} />
-              </Heading>
+              }}
+            >
+              <Jdenticon seed={addses.get('LicenseSale')} size={64} style={{ marginRight: 16 }} />
+              <Heading>{addses.get('name')}</Heading>
+              <span>Store Id: </span>
+              <EthAddress truncate address={addses.get('LicenseSale')} />
             </Box>
           </Link>
         ))}
@@ -53,8 +63,8 @@ export class AdminPage extends React.Component {
         <br />
         <br />
         <br />
-
-        <Button onClick={() => this.props.deployStore(this.props.currentAccount, indexOfAccount)}>Deploy A New Store</Button>
+        <Form.Input type="text" required ref={this.storeName} placeholder="Store Name" width={1} />
+        <Button onClick={() => this.props.deployStore(this.props.currentAccount, indexOfAccount, this.storeName.current.value)}>Deploy A New Store</Button>
       </Box>
     );
   }
@@ -63,12 +73,11 @@ export class AdminPage extends React.Component {
 export default connect(
   state => {
     const currentAccount = state.store.get('currentAccount');
-    let contracts = currentAccount ? state.store.getIn(['stores', currentAccount]) : null;
-    contracts = contracts ? contracts.keySeq().toArray() : [];
+    const contracts = state.store.getIn(['stores', currentAccount]);
     return {
       accounts: state.store.getIn(['web3', 'accounts']),
       currentAccount,
-      stores: contracts.length ? contracts : [],
+      stores: currentAccount && contracts ? contracts : fromJS({}),
     };
   },
   {

@@ -163,8 +163,8 @@ app.post('/stores', asyncMW(async (req, res) => {
 //
 // Upload new content.
 //
-app.post('/upload/:contractAddress/:productID', async (req, res) => {
-  const { contractAddress, productID } = req.params;
+app.post('/upload/:storeId/:productID', async (req, res) => {
+  const { storeId, productID } = req.params;
 
   const busboy = new Busboy({
     headers: req.headers,
@@ -178,12 +178,12 @@ app.post('/upload/:contractAddress/:productID', async (req, res) => {
   busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
     const trackIndex = uploadOps.length / 2;
 
-    const originalFilename = `${contractAddress}/${productID}/${trackIndex}.mp3`;
+    const originalFilename = `${storeId}/${productID}/${trackIndex}.mp3`;
     const originalFile = ffmpeg(fileStream)
       .format('mp3')
       .pipe();
 
-    const previewFilename = `${contractAddress}/${productID}/${trackIndex}-preview.mp3`;
+    const previewFilename = `${storeId}/${productID}/${trackIndex}-preview.mp3`;
     const previewFile = ffmpeg(originalFile)
       .format('mp3')
       .duration(10)
@@ -252,9 +252,9 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
 //
 // Fetch metadata for the given productID
 //
-app.get('/metadata/:contractAddress/:productID', async (req, res) => {
-  const { contractAddress, productID } = req.params;
-  const metadata = await redis.getMetadata(contractAddress, productID);
+app.get('/metadata/:storeId/:productID', async (req, res) => {
+  const { storeId, productID } = req.params;
+  const metadata = await redis.getMetadata(storeId, productID);
   metadata.tracks = metadata.tracks || [];
 
   // Filter out details that the end user shouldn't be able to know
@@ -267,9 +267,9 @@ app.get('/metadata/:contractAddress/:productID', async (req, res) => {
 //
 // Store metadata for the given productID
 //
-app.post('/metadata/:contractAddress/:productID', async (req, res) => {
-  const { contractAddress, productID } = req.params;
-  const metadata = await redis.setMetadata(contractAddress, productID, req.body);
+app.post('/metadata/:storeId/:productID', async (req, res) => {
+  const { storeId, productID } = req.params;
+  const metadata = await redis.setMetadata(storeId, productID, req.body);
   res.json({});
 });
 
