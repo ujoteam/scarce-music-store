@@ -3,6 +3,8 @@ export { default as SVGIconContainer } from './SVGIconContainer';
 export { default as Next } from './Next';
 export { default as Pause } from './Pause';
 export { default as Play } from './Play';
+export { default as PauseBig } from './PauseBig';
+export { default as PlayBig } from './PlayBig';
 export { default as SoundLow } from './SoundLow';
 export { default as SoundOn } from './SoundOn';
 export { default as SoundOff } from './SoundOff';

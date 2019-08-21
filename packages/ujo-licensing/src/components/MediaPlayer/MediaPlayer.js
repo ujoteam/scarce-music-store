@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames';
 import { connect } from 'react-redux';
+import { Box, Flex } from 'rimble-ui';
 
 import ProgressBar from './ProgressBar';
 import {
@@ -12,8 +13,8 @@ import {
   SoundLow,
   SoundOn,
   SoundOff,
-  Play,
-  Pause,
+  PlayBig,
+  PauseBig,
   Next,
   Previous,
   // Button,
@@ -68,15 +69,14 @@ export class MediaPlayer extends React.Component {
   }
 
   render() {
-    const { isPlaylist, personWithPlaylistId } = this.props;
     // Determine the volume icon
     let VolumeIcon;
     if (this.props.volume > 0.5) {
-      VolumeIcon = <SoundOn clickable onClick={this.toggleVolume} inactiveColor="#DADADA" activeColor="#F23584" />;
+      VolumeIcon = <SoundOn clickable onClick={() => this.toggleVolume()} inactiveColor="#DADADA" activeColor="#F23584" />;
     } else if (this.props.volume > 0) {
-      VolumeIcon = <SoundLow clickable onClick={this.toggleVolume} inactiveColor="#DADADA" activeColor="#F23584" />;
+      VolumeIcon = <SoundLow clickable onClick={() => this.toggleVolume()} inactiveColor="#DADADA" activeColor="#F23584" />;
     } else if (this.props.volume === 0) {
-      VolumeIcon = <SoundOff clickable onClick={this.toggleVolume} inactiveColor="#DADADA" activeColor="#F23584" />;
+      VolumeIcon = <SoundOff clickable onClick={() => this.toggleVolume()} inactiveColor="#DADADA" activeColor="#F23584" />;
     }
 
     // Create human readable representation of track position in seconds
@@ -89,22 +89,54 @@ export class MediaPlayer extends React.Component {
 
     return (
       <div className="media-player-container">
-        <Link to="/release/499">
-          <span>IMAGE ART</span>
-        </Link>
-        <div className="track-info-container">
-          <div className="track-title">
-            <span
-              title={this.props.track.get('name')}
-              className={longTitleClass}
-            >{this.props.track.get('name')}
+        <Flex justifyContent="space-between" alignItems="center">
+          <Link to="/release/499">
+            <Box style={{height: '60px', width: '60px', background: 'black', display: 'inline-block'}}/>
+          </Link>
+          <Box>
+            <span title={this.props.track.get('name')} className={longTitleClass}>
+              {this.props.track.get('name')}
             </span>
-          </div>
-          <div className="track-artist">
+          </Box>
+          <Box>
             <span>{this.props.release.get('artistName')}</span>
             <span> - {this.props.release.get('releaseName')}</span>
-          </div>
-        </div>
+          </Box>
+          <Box>
+            <Previous
+              inactiveColor="#DADADA"
+              activeColor="#F23584"
+              role="button"
+              tabIndex="0"
+              onClick={() => this.props.prevTrackClick()}
+            />
+            <span
+              style={{ background: 'black' }}
+              onClick={() => this.onPlayPauseClick()}>
+              {this.props.playing
+                ? <PauseBig activeColor="#F23584" inactiveColor="#DADADA" />
+                : <PlayBig activeColor="#F23584" inactiveColor="#DADADA" />
+              }
+            </span>
+            <Next
+              inactiveColor="#DADADA"
+              activeColor="#F23584"
+              role="button"
+              tabIndex="0"
+              onClick={() => this.props.nextTrackClick()}
+            />
+          </Box>
+          <Box>
+            {VolumeIcon}
+            {/* <ProgressBar
+              className="volume-slider hidden-sm-down"
+              total={1}
+              oneStepLength={10}
+              pos={this.props.volume}
+              onClick={(v) => this.props.volumeProgressBarChange(v)}
+            /> */}
+          </Box>
+        </Flex>
         {/* <div className="progress-bar-container" role="progressbar">
           <div className="current-pos-text">{formattedPos}</div>
           <ProgressBar
@@ -115,49 +147,6 @@ export class MediaPlayer extends React.Component {
           />
           <div className="track-duration-text">{this.props.track.get('duration')}</div>
         </div> */}
-        <div className="media-controls">
-          <div
-            className="next-prev hidden-xs-down"
-            role="button"
-            tabIndex="0"
-            onClick={() => this.props.prevTrackClick()}
-          >
-            <Previous
-              inactiveColor="#DADADA"
-              activeColor="#F23584"
-            />
-          </div>
-          <span
-            className="play-status-container"
-            style={{ background: 'black' }}
-            onClick={() => this.onPlayPauseClick()}>
-            {this.props.playing
-              ? <Pause activeColor="white" inactiveColor="white" />
-              : <Play activeColor="white" inactiveColor="white" />
-            }
-
-          </span>
-          <div
-            className="next-prev hidden-xs-down"
-            role="button"
-            tabIndex="0"
-            onClick={() => this.props.nextTrackClick()}
-          >
-            <Next
-              inactiveColor="#DADADA"
-              activeColor="#F23584" />
-          </div>
-        </div>
-        <div className="volume">
-          <div className="volume-icon">{VolumeIcon}</div>
-          <ProgressBar
-            className="volume-slider hidden-sm-down"
-            total={1}
-            oneStepLength={10}
-            pos={this.props.volume}
-            onClick={(v) => this.props.volumeProgressBarChange(v)}
-          />
-        </div>
       </div>
     );
   }

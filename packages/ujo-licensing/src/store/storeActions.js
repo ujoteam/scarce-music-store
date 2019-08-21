@@ -63,7 +63,8 @@ export const deployStore = (address, indexOfAccount, name) => async dispatch => 
   let res;
   try {
     // should add a new contract to the user
-    res = await axios.post(`${serverAddress}/stores`, { contractAddresses });
+    res = await fetch.postContactAddresses(contractAddresses);
+    // res = await axios.post(`${serverAddress}/stores`, { contractAddresses });
     dispatch({
       type: 'DEPLOY_STORE',
       address,

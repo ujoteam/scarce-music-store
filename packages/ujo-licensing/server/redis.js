@@ -30,8 +30,8 @@ async function setMetadata(contractAddress, productID, metadata) {
     await client.hsetAsync('metadata', contractAddress + ':' + productID, JSON.stringify(metadata))
 }
 
-async function addStoreContract(userAddress, { LicenseOwnership, LicenseSale, LicenseInventory }) {
-    await client.saddAsync('stores:' + userAddress, JSON.stringify({ LicenseOwnership, LicenseSale, LicenseInventory }))
+async function addStoreContract(userAddress, { LicenseOwnership, LicenseSale, LicenseInventory, name, id }) {
+    await client.saddAsync('stores:' + userAddress, JSON.stringify({ LicenseOwnership, LicenseSale, LicenseInventory, name, id }))
 }
 
 async function getStoreContracts(userAddress) {

@@ -103,7 +103,7 @@ export class MediaPlayerContainer extends React.Component {
     // const format = this.props.currentTrack.getIn(['audio', 'encodingFormat']).split('/')[1];
     // const uniqueTrackId = `${this.props.currentTrack.get('releaseId')}-${this.props.currentTrackIndex}`;
     return (
-      <Fragment> 
+      <Fragment>
         <MediaPlayer
           pos={this.state.pos}
           volume={this.props.volume}
@@ -113,8 +113,8 @@ export class MediaPlayerContainer extends React.Component {
           playing={this.props.playing}
           loading={this.props.loading}
           playPauseClick={this.props.togglePlay}
-          nextTrackClick={this.nextTrackHandler}
-          prevTrackClick={this.prevTrackHandler}
+          nextTrackClick={() => this.props.nextTrack()}
+          prevTrackClick={() => this.props.prevTrack()}
           progressBarChange={this.progressBarChangeHandler}
           openPlaylistModal={() => this.setState({ playlistModal: true })}
         />
@@ -125,7 +125,6 @@ export class MediaPlayerContainer extends React.Component {
           onPause={() => console.log('PAUSEEE')}
           onLoad={() => this.onLoadHandler}
           onEnd={() => this.nextTrackHandler}
-          format={'audio/mpeg'}
           ref={this.player}
         />
       </Fragment>

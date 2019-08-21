@@ -35,18 +35,15 @@ const reducer = (state = fromJS(initialState), action) => {
     case 'SET_VOLUME':
       return state.set('volume', action.volume);
     case 'ADJUST_CURRENT_TRACK': {
-      const newTrackIndex = getRelativeTrackNumber(state.get('currentTrackIndex'), action.offset, state.get('playlist').size);
+      const newTrackIndex = getRelativeTrackNumber(state.get('currentTrackIndex'), action.offset, state.getIn(['release', 'tracks']).size);
+      console.log('newTrackIndex', newTrackIndex);
       // Make sure we don't set `loading = true` if we are loading the same soundfile
       const currentTrackAddr = state.getIn(['playlist', state.get('currentTrackIndex')]);
       const nextTrackAddr = state.getIn(['playlist', newTrackIndex]);
-      let loading = true;
       if (currentTrackAddr === nextTrackAddr) {
         return state.update('trackCount', val => val + 1);
       }
-      return state.merge(Map({ // eslint-disable-line new-cap
-        currentTrackIndex: newTrackIndex,
-        loading,
-      }));
+      return state.set('currentTrackIndex', newTrackIndex);
     }
     case 'SET_CURRENT_TRACK':
       return state.set('currentTrackIndex', action.newTrackIndex)

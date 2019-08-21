@@ -72,7 +72,6 @@ export default class ReactHowler extends React.Component {
         src: this.props.src,
         mute: this.props.mute,
         loop: this.props.loop,
-        format: this.props.format,
         onend: this.props.onEnd,
         onplay: this.props.onPlay,
         onpause: this.props.onPause,

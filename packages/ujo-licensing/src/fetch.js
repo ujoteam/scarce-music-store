@@ -28,6 +28,8 @@ export const login = async (challenge, signature) => {
   return jwt
 }
 
+export const postContactAddresses = contractAddresses => axios.post(`${serverAddress}/stores`, { contractAddresses }, { headers: getHeaders() });
+
 export const getUserStoreContracts = () => {
   return axios.get(`${serverAddress}/stores?mine=1`, { headers: getHeaders() })
 }
