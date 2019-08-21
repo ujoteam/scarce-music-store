@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
 import MediaPlayer from './MediaPlayer';
-import ReactHowler from './reactHowler';
+import ReactHowler from './ReactHowler';
 // import { AUDIO_PROXY_ENDPOINT } from '../../constants/endpoints';
 import { togglePlay, seek, setVolume, nextTrack, prevTrack } from './actions';
 

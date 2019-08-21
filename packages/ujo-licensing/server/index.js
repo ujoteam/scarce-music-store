@@ -274,38 +274,6 @@ app.post('/metadata/:storeId/:productID', async (req, res) => {
 });
 
 //
-// Update the contract address
-//
-app.post('/update-address', (req, res) => {
-  console.log('Updating contract address', req.body.address);
-  contractAddress = req.body.address;
-  res.status(200).send();
-});
-
-app.get('/auth/:MetaAddress', metaAuth, (req, res) => {
-  // Request a message from the server
-  if (req.metaAuth && req.metaAuth.challenge) {
-    res.send(req.metaAuth.challenge);
-  } else {
-    res.status(500);
-  }
-});
-
-app.get('/auth/:MetaMessage/:MetaSignature/:contractAddress', metaAuth, async (req, res) => {
-  if (req.metaAuth && req.metaAuth.recovered) {
-    console.log('Checking if account owns the token');
-    let productIds = await UjoLicense.getOwnedProductIds(req.metaAuth.recovered, req.params.contractAddress, 0);
-    productIds = productIds.map(id => id.toString());
-
-    if (productIds.indexOf(req.params.MetaMessage) > -1) res.send(req.metaAuth.recovered);
-    else res.status(401).send();
-  } else {
-    // Sig did not match, invalid authentication
-    res.status(401).send();
-  }
-});
-
-//
 // Replenish the requesting user's ETH + DAI
 //
 app.get('/faucet', asyncMW(async (req, res, next) => {
@@ -318,7 +286,7 @@ app.get('/faucet', asyncMW(async (req, res, next) => {
   const backendWallet = Ethers.Wallet.fromMnemonic(process.env.ETH_MNEMONIC).connect(UjoLicense.provider)
 
   const ethMax = Ethers.utils.parseEther(process.env.MAX_FAUCET_ETH_AMOUNT || '1.0')
-  const daiMax = parseFloat(process.env.MAX_FAUCET_DAI_AMOUNT || '10000')
+  const daiMax = Ethers.utils.bigNumberify(process.env.MAX_FAUCET_DAI_AMOUNT || '10000')
 
   const ethBalance = await UjoLicense.provider.getBalance(ethAddress)
   if (ethBalance.lt( ethMax )) {
