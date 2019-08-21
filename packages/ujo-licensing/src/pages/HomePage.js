@@ -4,7 +4,7 @@ import { Link, withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Box, Button, Heading, Text, Flex } from 'rimble-ui';
 
-import { authenticate } from '../store/storeActions';
+import { getUserStoreContracts } from '../store/storeActions';
 
 import products from '../img/icons/037-deliverable.png';
 import subscriptions from '../img/icons/081-return on investment.png';
@@ -130,7 +130,7 @@ export default withRouter(
       currentAccount: state.store.get('currentAccount'),
     }),
     {
-      authenticate,
+      getUserStoreContracts,
     },
   )(HomePage),
 );

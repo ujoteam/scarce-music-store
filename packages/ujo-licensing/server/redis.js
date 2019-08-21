@@ -30,10 +30,42 @@ async function setMetadata(contractAddress, productID, metadata) {
     await client.hsetAsync('metadata', contractAddress + ':' + productID, JSON.stringify(metadata))
 }
 
+async function addStoreContract(userAddress, { LicenseOwnership, LicenseSale, LicenseInventory }) {
+    await client.saddAsync('stores:' + userAddress, JSON.stringify({ LicenseOwnership, LicenseSale, LicenseInventory }))
+}
+
+async function getStoreContracts(userAddress) {
+    if (userAddress) {
+        return ((await client.smembersAsync('stores:' + userAddress)) || []).map(JSON.parse)
+    } else {
+        let stores = []
+        await scanForEach('stores:*', async (keys) => {
+            for (let key of keys) {
+                let userStores = (await client.smembersAsync(key)).map(JSON.parse)
+                stores.push(...userStores)
+            }
+        })
+        return stores
+    }
+}
+
 async function clearAll() {
     await Promise.all([
         client.delAsync('metadata'),
+        scanForEach('stores:*', async (keys) => client.delAsync(...keys)),
     ])
+}
+
+async function scanForEach(pattern, fn) {
+    let cursor
+    while (true) {
+        let keys
+        [ cursor, keys ] = await client.scanAsync(cursor, 'MATCH', pattern)
+        await fn(keys)
+        if (cursor === '0') {
+            break
+        }
+    }
 }
 
 module.exports = {
@@ -41,4 +73,7 @@ module.exports = {
     getMetadata,
     setMetadata,
     clearAll,
+    addStoreContract,
+    getStoreContracts,
+    scanKeys,
 }

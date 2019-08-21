@@ -66,7 +66,7 @@ if (process.env.NODE_ENV !== 'production') {
   // web3 = new Ethers(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
 }
 
-redis.init();
+redis.init().then(() => redis.xyzzy())
 const port = process.env.PORT || '3001';
 const app = express();
 app.use(bodyParser.json()); // support json encoded bodies
@@ -129,53 +129,35 @@ app.get('/login/:MetaMessage/:MetaSignature', metaAuth, async (req, res) => {
 //
 // Fetch the list of stores deployed by the current user.
 //
-app.post('/auth', (req, res) => {
-  const userAddress = req.body.address;
-
-  try {
-    if (fs.existsSync('./server/db.json')) {
-      const cont = fs.readFileSync('./server/db.json', 'utf8');
-      let userInfo = JSON.parse(cont);
-      userInfo = Object.assign({}, userInfo); // not sure why I need this
-
-      if (userInfo[userAddress]) {
-        return res.json(userInfo[userAddress]);
-      }
-      userInfo[userAddress] = [];
-      fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-      return res.json(userInfo[userAddress]);
+app.get('/stores', asyncMW(async (req, res) => {
+  let stores
+  if (req.query.mine) {
+    if (!req.user || !req.user.ethAddress) {
+      return res.status(400).json({ error: 'cannot specify "mine" when not logged in' })
     }
-    const userInfo = {};
-    userInfo[userAddress] = [];
-    // fs.mkdir('./server', err => {
-    //   if (err) throw err;
-    //   fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-    res.json(userInfo[userAddress]);
-    // });
-  } catch (err) {
-    console.log(err);
-    res.status(500).send();
+    stores = await redis.getStoreContracts(req.user.ethAddress)
+  } else {
+    stores = await redis.getStoreContracts()
   }
-});
+
+  res.json(stores)
+}))
 
 //
 // Tell the backend that you've deployed a store contract.
 //
-app.post('/deploy-store', (req, res) => {
-  const userAddress = req.body.address;
+app.post('/stores', asyncMW(async (req, res) => {
+  if (!req.user || !req.user.ethAddress) {
+    return res.status(403).json({ error: 'you are not logged in' })
+  }
+
+  const userAddress = req.user.ethAddress;
   const { contractAddresses } = req.body;
 
-  const cont = fs.readFileSync('./server/db.json', 'utf8');
-  let userInfo = JSON.parse(cont);
-  userInfo = Object.assign({}, userInfo); // not sure why I need this
+  await redis.addStoreContract(userAddress, contractAddresses)
 
-  if (!userInfo[userAddress]) res.status(500).json({ error: 'we could not find your user account' });
-  else {
-    userInfo[userAddress].push(contractAddresses);
-    fs.writeFileSync('./server/db.json', JSON.stringify(userInfo));
-    res.status(200).send();
-  }
-});
+  res.json({})
+}))
 
 //
 // Upload new content.

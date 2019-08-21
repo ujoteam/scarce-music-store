@@ -28,6 +28,18 @@ export const login = async (challenge, signature) => {
   return jwt
 }
 
+export const getUserStoreContracts = () => {
+  return axios.get(`${serverAddress}/stores?mine=1`, { headers: getHeaders() })
+}
+
+export const getAllStoreContracts = () => {
+  return axios.get(`${serverAddress}/stores`, { headers: getHeaders() })
+}
+
+export const getAllStoreContracts = () => {
+  return axios.get(`${serverAddress}/stores`, { headers: getHeaders() })
+}
+
 export const requestFaucet = async () => {
   const resp = await axios.get(`${serverAddress}/faucet`, { headers: getHeaders() })
   console.log('faucet resp ~>', resp.data)

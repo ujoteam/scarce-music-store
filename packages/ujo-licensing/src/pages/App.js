@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 import { Box, Text, Button } from 'rimble-ui';
 import ReactAudioPlayer from 'react-audio-player';
 
-import { initWeb3, changeAddress, login, authenticate } from '../store/storeActions';
+import { initWeb3, changeAddress, login, getUserStoreContracts } from '../store/storeActions';
 import { requestFaucet } from '../fetch'
 
 export class App extends React.Component {
@@ -23,7 +23,7 @@ export class App extends React.Component {
 
   componentDidMount() {
     const { currentAccount } = this.props;
-    this.props.authenticate(currentAccount);
+    this.props.getUserStoreContracts(currentAccount);
     requestFaucet()
   }
 
@@ -35,7 +35,7 @@ export class App extends React.Component {
 
     const { currentAccount } = this.props;
     if (prevProps.currentAccount !== currentAccount) {
-      this.props.authenticate(currentAccount);
+      this.props.getUserStoreContracts(currentAccount);
     }
     // const { authenticated } = this.props;
     // if (!prevProps.authenticated && authenticated) {
@@ -118,7 +118,7 @@ export default withRouter(
       initWeb3,
       changeAddress,
       login,
-      authenticate,
+      getUserStoreContracts,
     },
   )(App),
 );

@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { Box, Button, Heading, Text, EthAddress } from 'rimble-ui';
 import Jdenticon from './Jdenticon';
 
-import { initWeb3, authenticate, deployStore } from '../store/storeActions';
+import { initWeb3, getUserStoreContracts, deployStore } from '../store/storeActions';
 
 import './AdminPage.css'
 
@@ -74,7 +74,7 @@ export default connect(
   },
   {
     initWeb3,
-    authenticate,
+    getUserStoreContracts,
     deployStore,
   },
 )(AdminPage);

@@ -61,7 +61,7 @@ export const deployStore = (address, indexOfAccount) => async dispatch => {
   let res;
   try {
     // should add a new contract to the user
-    res = await axios.post(`${serverAddress}/deploy-store`, { address, contractAddresses });
+    res = await axios.post(`${serverAddress}/stores`, { contractAddresses });
     dispatch({
       type: 'DEPLOY_STORE',
       address,
@@ -87,11 +87,11 @@ export const login = (ethAddress, index) => async dispatch => {
   }
 };
 
-export const authenticate = address => async dispatch => {
+export const getUserStoreContracts = address => async dispatch => {
   let res;
   try {
     // should add a new contract to the user
-    res = await axios.post(`${serverAddress}/auth`, { address });
+    res = await fetch.getUserStoreContracts()
     dispatch({
       type: 'AUTH_USER',
       address,
