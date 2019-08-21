@@ -75,5 +75,4 @@ module.exports = {
     clearAll,
     addStoreContract,
     getStoreContracts,
-    scanKeys,
 }

@@ -67,7 +67,7 @@ if (process.env.NODE_ENV !== 'production') {
   // web3 = new Ethers(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
 }
 
-redis.init().then(() => redis.xyzzy())
+redis.init()
 const port = process.env.PORT || '3001';
 const app = express();
 app.use(bodyParser.json()); // support json encoded bodies
