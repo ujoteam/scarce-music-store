@@ -30,23 +30,26 @@ async function setMetadata(contractAddress, productID, metadata) {
     await client.hsetAsync('metadata', contractAddress + ':' + productID, JSON.stringify(metadata))
 }
 
-async function addStoreContract(userAddress, { LicenseOwnership, LicenseSale, LicenseInventory, name, id }) {
-    await client.saddAsync('stores:' + userAddress, JSON.stringify({ LicenseOwnership, LicenseSale, LicenseInventory, name, id }))
+async function addStore(userAddress, { name, id, LicenseOwnership, LicenseSale, LicenseInventory }) {
+    await client.saddAsync('stores:all', id)
+    await client.saddAsync('stores:for-user:' + userAddress, id)
+    await client.hsetAsync('stores:data', id, JSON.stringify({ name, id, LicenseOwnership, LicenseSale, LicenseInventory }))
 }
 
-async function getStoreContracts(userAddress) {
-    if (userAddress) {
-        return ((await client.smembersAsync('stores:' + userAddress)) || []).map(JSON.parse)
+async function getStores({ userAddress, storeIDs } = {}) {
+    if (storeIDs) {
+        // no-op
+    } else if (userAddress) {
+        storeIDs = await client.smembersAsync('stores:for-user:' + userAddress) || []
     } else {
-        let stores = []
-        await scanForEach('stores:*', async (keys) => {
-            for (let key of keys) {
-                let userStores = (await client.smembersAsync(key)).map(JSON.parse)
-                stores.push(...userStores)
-            }
-        })
-        return stores
+        storeIDs = await client.smembersAsync('stores:all') || []
     }
+
+    if (storeIDs.length === 0) {
+        return []
+    }
+
+    return (await client.hmgetAsync('stores:data', ...storeIDs)).map(storeJSON => JSON.parse(storeJSON))
 }
 
 async function clearAll() {
@@ -73,6 +76,6 @@ module.exports = {
     getMetadata,
     setMetadata,
     clearAll,
-    addStoreContract,
-    getStoreContracts,
+    addStore,
+    getStores,
 }

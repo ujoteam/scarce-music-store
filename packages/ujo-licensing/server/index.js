@@ -136,9 +136,9 @@ app.get('/stores', asyncMW(async (req, res) => {
     if (!req.user || !req.user.ethAddress) {
       return res.status(400).json({ error: 'cannot specify "mine" when not logged in' })
     }
-    stores = await redis.getStoreContracts(req.user.ethAddress)
+    stores = await redis.getStores({ userAddress: req.user.ethAddress })
   } else {
-    stores = await redis.getStoreContracts()
+    stores = await redis.getStores()
   }
 
   res.json(stores)
@@ -155,7 +155,7 @@ app.post('/stores', asyncMW(async (req, res) => {
   const userAddress = req.user.ethAddress;
   const { contractAddresses } = req.body;
 
-  await redis.addStoreContract(userAddress, contractAddresses)
+  await redis.addStore(userAddress, contractAddresses)
 
   res.json({})
 }))
@@ -267,11 +267,11 @@ app.get('/metadata/:storeId/:productID', async (req, res) => {
 //
 // Store metadata for the given productID
 //
-app.post('/metadata/:storeId/:productID', async (req, res) => {
+app.post('/metadata/:storeId/:productID', asyncMW(async (req, res) => {
   const { storeId, productID } = req.params;
   const metadata = await redis.setMetadata(storeId, productID, req.body);
   res.json({});
-});
+}))
 
 //
 // Replenish the requesting user's ETH + DAI
