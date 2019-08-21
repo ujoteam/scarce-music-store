@@ -161,10 +161,10 @@ class UjoLicensing {
     return Object.assign({ productId: id }, product);
   }
 
-  async getOwnedProductIds(address, contractAddress, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(LicenseOwnership, contractAddress, indexOfAccount);
-    const tokensOf = await ContractInstance.tokensOf(address);
-    const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddress, indexOfAccount);
+  async getOwnedProductIds(userEthAddress, contractAddresses, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(LicenseOwnership, contractAddresses.LicenseOwnership, indexOfAccount);
+    const tokensOf = await ContractInstance.tokensOf(userEthAddress);
+    const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddresses.LicenseSale, indexOfAccount);
     const asyncDataFetch = async () =>
       Promise.all(tokensOf.map(async tokenIndex => LicenseSaleInstance.licenseProductId(tokenIndex)));
     const productIds = await asyncDataFetch();

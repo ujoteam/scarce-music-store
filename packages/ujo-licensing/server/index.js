@@ -153,9 +153,8 @@ app.post('/stores', asyncMW(async (req, res) => {
   }
 
   const userAddress = req.user.ethAddress;
-  const { contractAddresses } = req.body;
 
-  await redis.addStore(userAddress, contractAddresses)
+  await redis.addStore(userAddress, req.body)
 
   res.json({})
 }))
@@ -163,8 +162,8 @@ app.post('/stores', asyncMW(async (req, res) => {
 //
 // Upload new content.
 //
-app.post('/upload/:storeId/:productID', async (req, res) => {
-  const { storeId, productID } = req.params;
+app.post('/upload/:storeID/:productID', async (req, res) => {
+  const { storeID, productID } = req.params;
 
   const busboy = new Busboy({
     headers: req.headers,
@@ -178,12 +177,12 @@ app.post('/upload/:storeId/:productID', async (req, res) => {
   busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
     const trackIndex = uploadOps.length / 2;
 
-    const originalFilename = `${storeId}/${productID}/${trackIndex}.mp3`;
+    const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
     const originalFile = ffmpeg(fileStream)
       .format('mp3')
       .pipe();
 
-    const previewFilename = `${storeId}/${productID}/${trackIndex}-preview.mp3`;
+    const previewFilename = `${storeID}/${productID}/${trackIndex}-preview.mp3`;
     const previewFile = ffmpeg(originalFile)
       .format('mp3')
       .duration(10)
@@ -212,16 +211,22 @@ app.post('/upload/:storeId/:productID', async (req, res) => {
 //
 // Stream the given content.
 //
-app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => {
+app.get('/content/:storeID/:productID/:trackIndex', async (req, res) => {
   const ethAddress = req.user ? req.user.ethAddress : null;
-  const { contractAddress, productID, trackIndex } = req.params;
+  const { storeID, productID, trackIndex } = req.params;
   const { download } = req.query;
 
-  let userOwnsLicense = false;
+  const [ store ] = await redis.getStores({ storeIDs: [ storeID ] })
+
+  if (!store) {
+    return res.status(404).send()
+  }
+
+  let userOwnsLicense = false
   if (ethAddress) {
-    let productIds = await UjoLicense.getOwnedProductIds(ethAddress, contractAddress, 0);
-    productIds = productIds.map(id => id.toString());
-    userOwnsLicense = productIds.indexOf(productID) > -1;
+    let productIds = await UjoLicense.getOwnedProductIds(ethAddress, store, 0)
+    productIds = productIds.map(id => id.toString())
+    userOwnsLicense = productIds.indexOf(productID) > -1
   }
 
   // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
@@ -229,8 +234,8 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
   // stores with their own auth schemes as well.
 
   const s3ContentKey = userOwnsLicense
-    ? `${contractAddress}/${productID}/${trackIndex}.mp3`
-    : `${contractAddress}/${productID}/${trackIndex}-preview.mp3`;
+    ? `${storeID}/${productID}/${trackIndex}.mp3`
+    : `${storeID}/${productID}/${trackIndex}-preview.mp3`;
 
   if (download) {
     res.setHeader('Content-Type', 'audio/mpeg');
@@ -252,24 +257,19 @@ app.get('/content/:contractAddress/:productID/:trackIndex', async (req, res) => 
 //
 // Fetch metadata for the given productID
 //
-app.get('/metadata/:storeId/:productID', async (req, res) => {
-  const { storeId, productID } = req.params;
-  const metadata = await redis.getMetadata(storeId, productID);
+app.get('/metadata/:storeID/:productID', async (req, res) => {
+  const { storeID, productID } = req.params;
+  const metadata = await redis.getMetadata(storeID, productID);
   metadata.tracks = metadata.tracks || [];
-
-  // Filter out details that the end user shouldn't be able to know
-  // @@TODO: if a content URL points elsewhere, rather than to our managed service, we probably
-  // shouldn't filter it out (?)
-  metadata.tracks = metadata.tracks.map(track => omit(track, ['url'])); // Filter out the hidden track URLs
   res.json(metadata);
 });
 
 //
 // Store metadata for the given productID
 //
-app.post('/metadata/:storeId/:productID', asyncMW(async (req, res) => {
-  const { storeId, productID } = req.params;
-  const metadata = await redis.setMetadata(storeId, productID, req.body);
+app.post('/metadata/:storeID/:productID', asyncMW(async (req, res) => {
+  const { storeID, productID } = req.params;
+  const metadata = await redis.setMetadata(storeID, productID, req.body);
   res.json({});
 }))
 

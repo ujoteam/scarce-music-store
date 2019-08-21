@@ -60,7 +60,7 @@ async function clearAll() {
 }
 
 async function scanForEach(pattern, fn) {
-    let cursor
+    let cursor = '0'
     while (true) {
         let keys
         [ cursor, keys ] = await client.scanAsync(cursor, 'MATCH', pattern)

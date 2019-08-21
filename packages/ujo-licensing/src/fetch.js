@@ -28,7 +28,9 @@ export const login = async (challenge, signature) => {
   return jwt
 }
 
-export const postContactAddresses = contractAddresses => axios.post(`${serverAddress}/stores`, { contractAddresses }, { headers: getHeaders() });
+export const deployStore = (storeData) => {
+  return axios.post(`${serverAddress}/stores`, storeData, { headers: getHeaders() });
+}
 
 export const getUserStoreContracts = () => {
   return axios.get(`${serverAddress}/stores?mine=1`, { headers: getHeaders() })
@@ -36,6 +38,21 @@ export const getUserStoreContracts = () => {
 
 export const getAllStoreContracts = () => {
   return axios.get(`${serverAddress}/stores`, { headers: getHeaders() })
+}
+
+export const uploadContent = (files, storeId, productId) => {
+  const formData = new FormData();
+  files.forEach((file, i) => {
+    formData.append(`track-${i}`, file);
+  });
+
+  const trackLocations = await axios.post(`${serverAddress}/upload/${storeId}/${productId}`, formData, {
+    headers: {
+      ...getHeaders(),
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return trackLocations.data;
 }
 
 export const requestFaucet = async () => {

@@ -63,7 +63,7 @@ export const deployStore = (address, indexOfAccount, name) => async dispatch => 
   let res;
   try {
     // should add a new contract to the user
-    res = await fetch.postContactAddresses(contractAddresses);
+    res = await fetch.deployStore(contractAddresses);
     // res = await axios.post(`${serverAddress}/stores`, { contractAddresses });
     dispatch({
       type: 'DEPLOY_STORE',
@@ -150,16 +150,7 @@ export const createProduct = (
 };
 
 const uploadContent = async (files, storeId, productId) => {
-  const formData = new FormData();
-  // formData.append('track', file);
-  files.map((file, i) => {
-    console.log('file ~>', file);
-    formData.append(`track-${i}`, file);
-  });
-  const headers = { 'Content-Type': 'multipart/form-data' };
-
-  const trackLocations = await axios.post(`${serverAddress}/upload/${storeId}/${productId}`, formData, { headers });
-  return trackLocations.data;
+  return fetch.uploadContent(files, storeId, productId)
 };
 
 export const createScarceRelease = (releaseInfo, currentAccount, contractAddress, storeId, indexOfAccount) => async dispatch => {
