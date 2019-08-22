@@ -40,7 +40,7 @@ export const getAllStoreContracts = () => {
   return axios.get(`${serverAddress}/stores`, { headers: getHeaders() })
 }
 
-export const uploadContent = (files, storeId, productId) => {
+export const uploadContent = async (files, storeId, productId) => {
   const formData = new FormData();
   files.forEach((file, i) => {
     formData.append(`track-${i}`, file);
