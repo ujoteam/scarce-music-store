@@ -51,10 +51,10 @@ export class App extends React.Component {
         formData.append('uploads' + i, file)
         i++
     }
-    let resp = await axios.post('/upload/0xdeadbeef/1234', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    console.log('resp ~>', resp.data)
+    // let resp = await axios.post('/upload/0xdeadbeef/1234', formData, {
+    //     headers: { 'Content-Type': 'multipart/form-data' },
+    // })
+    // console.log('resp ~>', resp.data)
     // const { original, preview } = resp.data
     // let contractAddress = '0xdeadbeef'
     // let productID = '1234'

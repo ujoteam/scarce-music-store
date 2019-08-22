@@ -8,7 +8,6 @@ import { Box, Flex } from 'rimble-ui';
 
 import ProgressBar from './ProgressBar';
 import {
-  // IPFSImage,
   // MakeSquare,
   SoundLow,
   SoundOn,
@@ -17,7 +16,6 @@ import {
   PauseBig,
   Next,
   Previous,
-  // Button,
 } from '../Icons';
 
 function getFormattedTime(seconds) {
@@ -94,13 +92,13 @@ export class MediaPlayer extends React.Component {
             <Box style={{height: '60px', width: '60px', background: 'black', display: 'inline-block'}}/>
           </Link>
           <Box>
+            <span>{this.props.release.get('artistName')}</span>
+            <span> - {this.props.release.get('releaseName')}</span>
+          </Box>
+          <Box>
             <span title={this.props.track.get('name')} className={longTitleClass}>
               {this.props.track.get('name')}
             </span>
-          </Box>
-          <Box>
-            <span>{this.props.release.get('artistName')}</span>
-            <span> - {this.props.release.get('releaseName')}</span>
           </Box>
           <Box>
             <Previous
@@ -111,11 +109,11 @@ export class MediaPlayer extends React.Component {
               onClick={() => this.props.prevTrackClick()}
             />
             <span
-              style={{ background: 'black' }}
+              style={{ margin: '0 10px', background: '#F23584', borderRadius: '50%', padding: '11px 10px 7px' }}
               onClick={() => this.onPlayPauseClick()}>
               {this.props.playing
-                ? <PauseBig activeColor="#F23584" inactiveColor="#DADADA" />
-                : <PlayBig activeColor="#F23584" inactiveColor="#DADADA" />
+                ? <PauseBig activeColor="#DADADA" inactiveColor="white" />
+                : <PlayBig activeColor="#DADADA" inactiveColor="#white" />
               }
             </span>
             <Next

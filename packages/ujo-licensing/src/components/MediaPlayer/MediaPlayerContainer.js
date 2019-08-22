@@ -33,6 +33,7 @@ export class MediaPlayerContainer extends React.Component {
     this.state = {
       pos: 0,
     };
+    this.player = React.createRef();
   }
 
   componentDidUpdate(prevProps) {
@@ -42,7 +43,7 @@ export class MediaPlayerContainer extends React.Component {
     // html5 hack for releases with one song
     // when user hits next or previous song
     if (prevProps.trackCount !== this.props.trackCount) {
-      this.player.seek(0);
+      this.player.current.howler.seek(0);
     }
   }
 
@@ -100,6 +101,7 @@ export class MediaPlayerContainer extends React.Component {
     if (!this.props.currentTrack) return null;
 
     const src = `http://localhost:3001/content/${this.props.contractAddress}/${this.props.release.get('id')}/${this.props.currentTrackIndex}`;
+    // const src = 'https://freemusicarchive.org/file/music/Oddio_Overplay/Gustav_Landin/Canzoni_per_i_Natali_del_Futuro/Gustav_Landin_-_01_-_Elatan.mp3';
     // const format = this.props.currentTrack.getIn(['audio', 'encodingFormat']).split('/')[1];
     // const uniqueTrackId = `${this.props.currentTrack.get('releaseId')}-${this.props.currentTrackIndex}`;
     return (

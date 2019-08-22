@@ -192,11 +192,17 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
   });
 };
 
-export const getReleaseInfo = (releaseId, contractAddress) => async dispatch => {
-  const res = await axios.get(`${serverAddress}/metadata/${contractAddress}/${releaseId}`);
+export const getReleaseInfo = (releaseId, storeId) => async dispatch => {
+  const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);
+  const resp = await axios.get(`${serverAddress}/stores?storeID=${storeId}`);
+  const storeInfo = resp.data;
+
+  const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo.LicenseInventory, releaseId);
   dispatch({
     type: 'RELEASE_INFO',
     releaseInfo: res.data,
     releaseId,
+    releaseContractInfo,
+    releaseContracts: resp.data,
   });
 };

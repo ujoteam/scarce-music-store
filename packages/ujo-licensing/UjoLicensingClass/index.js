@@ -171,6 +171,8 @@ class UjoLicensing {
     return productIds.map(bn => bn.toNumber());
   }
 
+  // should probably just call getProductIds and map through each calling the
+  // new getProductInfoForContract function below... v2
   async getProductsForContract(contractAddress, indexOfAccount) {
     const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
     let productIds = await ContractInstance.getAllProductIds();
@@ -190,6 +192,20 @@ class UjoLicensing {
 
     return {
       productIds,
+      productData,
+      soldData,
+    };
+  }
+
+  async getProductInfoForContract(contractAddress, productId, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
+
+    let productData = await ContractInstance.productInfo(productId);
+    productData = this.normalizeProductValues(productData);
+    let soldData = await ContractInstance.totalSold(productId);
+    soldData = soldData.toNumber();
+
+    return {
       productData,
       soldData,
     };

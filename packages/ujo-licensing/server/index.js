@@ -137,7 +137,10 @@ app.get('/stores', asyncMW(async (req, res) => {
       return res.status(400).json({ error: 'cannot specify "mine" when not logged in' })
     }
     stores = await redis.getStores({ userAddress: req.user.ethAddress })
-  } else {
+  } else if (req.query.storeID) {
+    const [ store ] = await redis.getStores({ storeIDs: [ req.query.storeID ] })
+    return res.json(store)
+   } else {
     stores = await redis.getStores()
   }
 

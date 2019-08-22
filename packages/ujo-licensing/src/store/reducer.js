@@ -55,6 +55,8 @@ const reducer = (state = fromJS(initialState), action) => {
       return state;
     case 'RELEASE_INFO':
       return state.setIn(['releases', action.releaseId], fromJS(action.releaseInfo))
+                  .setIn(['releases', action.releaseId, 'contractInfo'], fromJS(action.releaseContractInfo))
+                  .setIn(['releases', action.releaseId, 'contracts'], fromJS(action.releaseContracts))
                   .setIn(['releases', action.releaseId, 'id'], action.releaseId);
     default:
       return state;
