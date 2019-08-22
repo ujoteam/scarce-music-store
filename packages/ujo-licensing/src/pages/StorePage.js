@@ -24,12 +24,17 @@ export class StorePage extends React.Component {
   render() {
     const { products, currentStore, licensingContract, match, storeName } = this.props;
     const productKeys = products.keySeq().toArray();
+    // needed because immutable holds pointers both integers and numbers
+    const uniqueKeys = [];
+    productKeys.map(key => {
+      const nKey = parseInt(key)
+      if (uniqueKeys.indexOf(nKey) < 0) uniqueKeys.push(nKey);
+    })
+    console.log('uniqueKeys', uniqueKeys)
     return (
       <Box p={30}>
         <div style={{ display: 'flex' }}>
-          <Heading>
-            Store: {storeName}
-          </Heading>
+          <Heading>Store: {storeName}</Heading>
           <div style={{ flexGrow: 1 }} />
           <Link
             to={`/some-store/${match.params.storeId}`}
@@ -58,7 +63,7 @@ export class StorePage extends React.Component {
             </tr>
           </thead>
           <tbody>
-            {productKeys.map(key => (
+            {uniqueKeys.map(key => (
               <tr key={key}>
                 <td>
                   <Link to={`/release/${this.props.match.params.storeId}/${key}`}>
@@ -109,7 +114,7 @@ export default withRouter(
   connect(
     (state, props) => {
       const currentAccount = state.store.get('currentAccount');
-      const storeInfo = state.store.getIn(['stores', currentAccount, props.match.params.storeId]);
+      const storeInfo = state.store.getIn(['stores', props.match.params.storeId]);
       const accounts = state.store.getIn(['web3', 'accounts']);
       return {
         products: storeInfo && storeInfo.get('products') ? storeInfo.get('products') : fromJS({}),

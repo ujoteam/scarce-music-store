@@ -43,7 +43,7 @@ const base = {
   ],
 };
 
-const ReleasePage = ({ buyProduct, currentAccount, web3Initialized, releaseInfo, match, getReleaseInfo, setRelease, togglePlay, setCurrentTrackIndex, currentTrackIndex, playing, sameReleaseAsMP }) => {
+const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized, releaseInfo, match, getReleaseInfo, setRelease, togglePlay, setCurrentTrackIndex, currentTrackIndex, playing, sameReleaseAsMP }) => {
   useEffect(() => {
     if (web3Initialized) {
       getReleaseInfo(match.params.releaseId, match.params.storeId);
@@ -64,9 +64,7 @@ const ReleasePage = ({ buyProduct, currentAccount, web3Initialized, releaseInfo,
     }
   };
 
-  const salesLeft = releaseInfo.getIn(['contractInfo', 'productData', 'totalSupply']) - releaseInfo.getIn(['contractInfo', 'soldData']);
-  console.log('salesLeft', salesLeft);
-
+  const salesLeft = releaseInfo.get('totalSupply') - releaseInfo.get('totalSold');
   return (
     <Box position="relative" minHeight="100vh" style={{ overflow: 'hidden' }}>
       <Box
@@ -143,11 +141,7 @@ const ReleasePage = ({ buyProduct, currentAccount, web3Initialized, releaseInfo,
           <Box style={{ textAlign: 'right' }}>
             <span>There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.</span>
             <br />
-            <Button
-              onClick={() =>
-                buyProduct(releaseInfo.get('id'), releaseInfo.getIn(['contracts', 'LicenseSale']), currentAccount)
-              }
-            >
+            <Button onClick={() => buyProduct(match.params.releaseId, licenseSale, currentAccount)}>
               Buy Release - ${releaseInfo.get('price')}
             </Button>
           </Box>
@@ -159,7 +153,8 @@ const ReleasePage = ({ buyProduct, currentAccount, web3Initialized, releaseInfo,
 
 export default connect(
   (state, ownProps) => ({
-    releaseInfo: state.store.getIn(['releases', ownProps.match.params.releaseId]) || fromJS(base),
+    releaseInfo: state.store.getIn(['stores', ownProps.match.params.storeId, 'products', ownProps.match.params.releaseId]) || fromJS(base),
+    licenseSale: state.store.getIn(['stores', ownProps.match.params.storeId, 'LicenseSale']),
     playing: state.mediaPlayer.get('playing'),
     sameReleaseAsMP: state.mediaPlayer.getIn(['release', 'id']) === ownProps.match.params.releaseId,
     currentTrackIndex: state.mediaPlayer.get('currentTrackIndex'),

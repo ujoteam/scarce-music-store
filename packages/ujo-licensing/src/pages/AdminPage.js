@@ -73,7 +73,8 @@ export class AdminPage extends React.Component {
 export default connect(
   state => {
     const currentAccount = state.store.get('currentAccount');
-    const contracts = state.store.getIn(['stores', currentAccount]);
+    const contractIds = state.store.getIn(['userStores', currentAccount]);
+    const contracts = contractIds && contractIds.size ? contractIds.map(id => state.store.getIn(['stores', id])) : null;
     return {
       accounts: state.store.getIn(['web3', 'accounts']),
       currentAccount,

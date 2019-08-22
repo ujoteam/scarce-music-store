@@ -69,7 +69,6 @@ export const deployStore = (address, indexOfAccount, name) => async dispatch => 
       type: 'DEPLOY_STORE',
       address,
       contractAddresses,
-      name,
     });
   } catch (error) {
     console.log(error);
@@ -110,7 +109,6 @@ export const getProductsForContract = (contractAddress, storeId, ethAddress) => 
     productData,
     soldData,
     storeId,
-    ethAddress,
   });
 };
 
@@ -198,11 +196,13 @@ export const getReleaseInfo = (releaseId, storeId) => async dispatch => {
   const storeInfo = resp.data;
 
   const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo.LicenseInventory, releaseId);
+  releaseContractInfo.productData.totalSold = releaseContractInfo.soldData;
   dispatch({
     type: 'RELEASE_INFO',
     releaseInfo: res.data,
     releaseId,
-    releaseContractInfo,
+    storeId,
+    releaseContractInfo: releaseContractInfo.productData,
     releaseContracts: resp.data,
   });
 };

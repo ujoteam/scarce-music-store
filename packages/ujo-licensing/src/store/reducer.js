@@ -11,20 +11,28 @@ const reducer = (state = fromJS(initialState), action) => {
       return state.setIn(['web3', 'accounts'], action.accounts).set('currentAccount', action.accounts[0]);
     case 'AUTH_USER':
       console.log('action.contractAddresses', action.contractAddresses);
-      return state.set('authenticated', true).update('stores', (v = fromJS({})) => {
-        v = v.update(action.address, (val = fromJS({})) => {
+      return state.set('authenticated', true)
+        .update('stores', (v = fromJS({})) => {
           action.contractAddresses.map(addses => {
-            val = val.set(addses.id, fromJS(addses));
+            v = v.set(addses.id.toString(), fromJS(addses));
           });
-          return val;
+          return v;
+        })
+        .update('userStores', (v = fromJS({})) => {
+          v = v.update(action.address, (val = fromJS([])) => {
+            action.contractAddresses.map(addses => {
+              val = val.push(addses.id); //set(addses.id, fromJS(addses));
+            });
+            return val;
+          });
+          return v;
         });
-        return v;
-      });
     case 'DEPLOY_STORE':
-      return state.setIn(['stores', action.address, action.contractAddresses.id], fromJS(action.contractAddresses));
+      return state.setIn(['stores', action.contractAddresses.id], fromJS(action.contractAddresses))
+                  .updateIn(['userStores', action.address], (v = fromJS([])) => v.push(action.contractAddresses.id)); //fromJS(action.contractAddresses));
     case 'ADD_NEW_PRODUCT':
       return state.updateIn(
-        ['stores', action.currentAccount, action.storeId, 'products'],
+        ['stores', action.storeId, 'products'],
         (v = fromJS({})) => v.set(action.productId, fromJS(Object.assign(action.product, { totalSold: 0 }))),
         // v.push(Object.assign(action.product, { id: action.productId })),
       );
@@ -32,15 +40,14 @@ const reducer = (state = fromJS(initialState), action) => {
       return (
         state
           .set('authenticated', false)
-          // .set('stores', fromJS({}))
           .set('currentAccount', action.newAddress)
           .set('jwt', action.jwt)
           .update('purchases', v => v.map((val, k) => fromJS([])))
       );
     case 'STORE_PRODUCT_INFO':
-      return state.updateIn(['stores', action.ethAddress, action.storeId, 'products'], (v = fromJS({})) => {
+      return state.updateIn(['stores', action.storeId, 'products'], (v = fromJS({})) => {
         action.productIds.map((id, i) => {
-          v = v.set(id, fromJS(Object.assign({}, action.productData[i]))); // needed because web3 returns a 'Result' object??
+          v = v.update(id, (val = fromJS({})) => val.merge(fromJS(Object.assign({}, action.productData[i])))); // needed because web3 returns a 'Result' object??
           v = v.setIn([id, 'totalSold'], action.soldData[i]);
           return v;
         });
@@ -54,10 +61,9 @@ const reducer = (state = fromJS(initialState), action) => {
       // return state.updateIn(['purchases', action.contractAddress], (v = fromJS([])) => v.push(action.verified));
       return state;
     case 'RELEASE_INFO':
-      return state.setIn(['releases', action.releaseId], fromJS(action.releaseInfo))
-                  .setIn(['releases', action.releaseId, 'contractInfo'], fromJS(action.releaseContractInfo))
-                  .setIn(['releases', action.releaseId, 'contracts'], fromJS(action.releaseContracts))
-                  .setIn(['releases', action.releaseId, 'id'], action.releaseId);
+      return state.updateIn(['stores', action.storeId], (v = fromJS({})) => v.merge(fromJS(action.releaseContracts)))
+                  .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseInfo)))
+                  .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseContractInfo)))
     default:
       return state;
   }
