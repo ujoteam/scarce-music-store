@@ -77,34 +77,27 @@ export const deployStore = (address, indexOfAccount, name) => async dispatch => 
   console.log(res);
 };
 
-export const login = (ethAddress, index) => async dispatch => {
+export const login = (address, index) => async dispatch => {
   try {
-    const resp = await fetch.getLoginChallenge(ethAddress);
+    const jwt = window.localStorage.getItem(`jwt-${address}`);
+    if (jwt) fetch.setJWT(jwt);
+    else {
+      const resp = await fetch.getLoginChallenge(address);
+      const challenge = resp.data.challenge[1].value;
+      const signature = await UjoLicensing.signData(challenge, index);
+      await fetch.login(challenge, signature);
+    }
 
-    const challenge = resp.data.challenge[1].value;
-    const signature = await UjoLicensing.signData(challenge, index);
-
-    const jwt = await fetch.login(challenge, signature);
-    return jwt;
-  } catch (err) {
-    console.log('/login error:', err);
-  }
-};
-
-export const getUserStoreContracts = address => async dispatch => {
-  let res;
-  try {
-    // should add a new contract to the user
-    res = await fetch.getUserStoreContracts()
+    // get contracts
+    const res = await fetch.getUserStoreContracts()
     dispatch({
       type: 'AUTH_USER',
       address,
       contractAddresses: res.data,
     });
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log('/login error:', err);
   }
-  console.log(res);
 };
 
 export const getProductsForContract = (contractAddress, storeId, ethAddress) => async dispatch => {

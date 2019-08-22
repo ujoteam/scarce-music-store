@@ -6,7 +6,7 @@ import { Box, Text, Button } from 'rimble-ui';
 import ReactAudioPlayer from 'react-audio-player';
 
 import MediaPlayerContainer from '../components/MediaPlayer/MediaPlayerContainer';
-import { initWeb3, changeAddress, login, getUserStoreContracts } from '../store/storeActions';
+import { initWeb3, changeAddress, login } from '../store/storeActions';
 import { requestFaucet } from '../fetch'
 
 export class App extends React.Component {
@@ -22,25 +22,15 @@ export class App extends React.Component {
   }
 
   componentDidMount() {
-    const { currentAccount } = this.props;
-    this.props.getUserStoreContracts(currentAccount);
-    requestFaucet()
+    requestFaucet();
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.accounts !== this.props.accounts) {
-      const address = this.account.current.value;
-      this.props.login(address, this.props.accounts.indexOf(address));
-    }
-
     const { currentAccount } = this.props;
-    if (prevProps.currentAccount !== currentAccount) {
-      this.props.getUserStoreContracts(currentAccount);
+    if (prevProps.accounts !== this.props.accounts && currentAccount) {
+      const address = this.account.current.value;
+      this.props.login(currentAccount, this.props.accounts.indexOf(currentAccount));
     }
-    // const { authenticated } = this.props;
-    // if (!prevProps.authenticated && authenticated) {
-    //   this.props.history.push('/admin');
-    // }
   }
 
   async changeAddress() {
@@ -119,7 +109,6 @@ export default withRouter(
       initWeb3,
       changeAddress,
       login,
-      getUserStoreContracts,
     },
   )(App),
 );
