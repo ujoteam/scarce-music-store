@@ -85,7 +85,7 @@ export const login = (address, index) => async dispatch => {
       const resp = await fetch.getLoginChallenge(address);
       const challenge = resp.data.challenge[1].value;
       const signature = await UjoLicensing.signData(challenge, index);
-      await fetch.login(challenge, signature);
+      await fetch.login(challenge, signature, address);
     }
 
     // get contracts

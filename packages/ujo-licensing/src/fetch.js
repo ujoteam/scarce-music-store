@@ -24,7 +24,7 @@ export const setJWT = incomingJWT => {
   jwt = incomingJWT;
 };
 
-export const login = async (challenge, signature) => {
+export const login = async (challenge, signature, ethAddress) => {
   const resp2 = await axios.get(`${serverAddress}/login/${challenge}/${signature}`, { headers: getHeaders() });
   jwt = resp2.data.jwt
   window.localStorage.setItem(`jwt-${ethAddress}`, jwt);
