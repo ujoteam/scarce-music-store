@@ -22,15 +22,15 @@ export class App extends React.Component {
   }
 
   componentDidMount() {
-    requestFaucet();
   }
 
-  componentDidUpdate(prevProps) {
+  async componentDidUpdate(prevProps) {
     const { currentAccount } = this.props;
     if (prevProps.accounts !== this.props.accounts && currentAccount) {
       const address = this.account.current.value;
-      this.props.login(currentAccount, this.props.accounts.indexOf(currentAccount));
+      await this.props.login(currentAccount, this.props.accounts.indexOf(currentAccount));
     }
+    requestFaucet();
   }
 
   async changeAddress() {
