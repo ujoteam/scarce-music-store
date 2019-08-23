@@ -104,19 +104,19 @@ app.use('/', express.static('.'));
 //
 // Authentication, step 1.  Request a challenge message from the server which will be signed by the user.
 //
-app.get('/login/:MetaAddress', metaAuth, (req, res) => {
+app.get('/login/:MetaAddress', metaAuth, asyncMW((req, res) => {
   if (req.metaAuth && req.metaAuth.challenge) {
     res.send({ challenge: req.metaAuth.challenge });
   } else {
     res.status(500).send();
   }
-});
+}));
 
 //
 // Authentication, step 2.  Recovers the user's ETH address from the signed challenge, and sets
 // a JWT that identifies the user for subsequent requests.
 //
-app.get('/login/:MetaMessage/:MetaSignature', metaAuth, async (req, res) => {
+app.get('/login/:MetaMessage/:MetaSignature', metaAuth, asyncMW(async (req, res) => {
   if (req.metaAuth && req.metaAuth.recovered) {
     const ethAddress = req.metaAuth.recovered;
     const token = jwt.sign({ ethAddress }, JWT_SECRET);
@@ -125,7 +125,7 @@ app.get('/login/:MetaMessage/:MetaSignature', metaAuth, async (req, res) => {
     // Sig did not match, invalid authentication
     res.status(401).send();
   }
-});
+}));
 
 //
 // Fetch the list of stores deployed by the current user.
@@ -137,10 +137,12 @@ app.get('/stores', asyncMW(async (req, res) => {
       return res.status(400).json({ error: 'cannot specify "mine" when not logged in' })
     }
     stores = await redis.getStores({ userAddress: req.user.ethAddress })
+
   } else if (req.query.storeID) {
     const [ store ] = await redis.getStores({ storeIDs: [ req.query.storeID ] })
     return res.json(store)
-   } else {
+
+  } else {
     stores = await redis.getStores()
   }
 
@@ -165,7 +167,7 @@ app.post('/stores', asyncMW(async (req, res) => {
 //
 // Upload new content.
 //
-app.post('/upload/:storeID/:productID', async (req, res) => {
+app.post('/upload/:storeID/:productID', asyncMW(async (req, res) => {
   const { storeID, productID } = req.params;
 
   const busboy = new Busboy({
@@ -209,12 +211,12 @@ app.post('/upload/:storeID/:productID', async (req, res) => {
   });
 
   req.pipe(busboy);
-});
+}));
 
 //
 // Stream the given content.
 //
-app.get('/content/:storeID/:productID/:trackIndex', async (req, res) => {
+app.get('/content/:storeID/:productID/:trackIndex', asyncMW(async (req, res) => {
   const ethAddress = req.user ? req.user.ethAddress : null;
   const { storeID, productID, trackIndex } = req.params;
   const { download } = req.query;
@@ -255,17 +257,17 @@ app.get('/content/:storeID/:productID/:trackIndex', async (req, res) => {
     console.log('ERROR: ', err);
     res.status(500).json({ error: err.toString() });
   }
-});
+}));
 
 //
 // Fetch metadata for the given productID
 //
-app.get('/metadata/:storeID/:productID', async (req, res) => {
+app.get('/metadata/:storeID/:productID', asyncMW(async (req, res) => {
   const { storeID, productID } = req.params;
   const metadata = await redis.getMetadata(storeID, productID);
   metadata.tracks = metadata.tracks || [];
   res.json(metadata);
-});
+}));
 
 //
 // Store metadata for the given productID
