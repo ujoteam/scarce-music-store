@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+const DotenvPlugin = require('dotenv-webpack')
 
 module.exports = {
   entry: './src/main.js',
@@ -55,6 +56,7 @@ module.exports = {
     ],
   },
   plugins: [
+    new DotenvPlugin(),
     new webpack.ProvidePlugin({
       $: 'jquery',
       jQuery: 'jquery',
