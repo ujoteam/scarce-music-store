@@ -118,7 +118,7 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
                 style={{ margin: '0 10px', background: '#F23584', borderRadius: '50%', padding: '16px 20px ' }}
                 onClick={() => onPlayPauseClick()}
               >
-                {playing
+                {playing && sameReleaseAsMP
                   ? <PauseBig h={40} w={40} activeColor="#DADADA" inactiveColor="white" />
                   : <PlayBig h={40} w={40} activeColor="#DADADA" inactiveColor="white" />
                 }

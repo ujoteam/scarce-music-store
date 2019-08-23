@@ -33,7 +33,11 @@ const reducer = (state = fromJS(initialState), action) => {
     case 'ADD_NEW_PRODUCT':
       return state.updateIn(
         ['stores', action.storeId, 'products'],
-        (v = fromJS({})) => v.set(action.productId, fromJS(Object.assign(action.product, { totalSold: 0 }))),
+        (v = fromJS({})) => {
+          v = v.set(action.productId, fromJS(Object.assign(action.product, { totalSold: 0 })))
+               .setIn([action.productId, 'id'], action.productId)
+          return v;
+        },
         // v.push(Object.assign(action.product, { id: action.productId })),
       );
     case 'CHANGED_ADDRESS':
@@ -49,6 +53,7 @@ const reducer = (state = fromJS(initialState), action) => {
         action.productIds.map((id, i) => {
           v = v.update(id, (val = fromJS({})) => val.merge(fromJS(Object.assign({}, action.productData[i])))); // needed because web3 returns a 'Result' object??
           v = v.setIn([id, 'totalSold'], action.soldData[i]);
+          v = v.setIn([id, 'id'], id);
           return v;
         });
         return v;
@@ -64,6 +69,7 @@ const reducer = (state = fromJS(initialState), action) => {
       return state.updateIn(['stores', action.storeId], (v = fromJS({})) => v.merge(fromJS(action.releaseContracts)))
                   .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseInfo)))
                   .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseContractInfo)))
+                  .setIn(['stores', action.storeId, 'products', action.releaseId, 'id'], action.releaseId)
     default:
       return state;
   }
