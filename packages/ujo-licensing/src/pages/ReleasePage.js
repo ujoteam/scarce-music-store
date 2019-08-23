@@ -114,7 +114,7 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
               <Link to={`/store/${match.params.storeId}`}>Back to Store</Link>
             </Box>
             <Box mr={20}>
-              <div 
+              <div
                 style={{ margin: '0 10px', background: '#F23584', borderRadius: '50%', padding: '16px 20px ' }}
                 onClick={() => onPlayPauseClick()}
               >
@@ -144,7 +144,7 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
         <Box style={{ textAlign: 'right' }}>
           <span>There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.</span>
           <br />
-          <Button onClick={() => buyProduct(match.params.releaseId, licenseSale, currentAccount)}>
+          <Button onClick={() => buyProduct(match.params.releaseId, match.params.storeId, currentAccount)}>
             Buy Release - ${releaseInfo.get('price')}
           </Button>
         </Box>

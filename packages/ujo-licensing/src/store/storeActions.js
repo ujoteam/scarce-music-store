@@ -38,12 +38,14 @@ export const getTokensForAddressFromContract = (address, contractAddress) => asy
   });
 };
 
-export const buyProduct = (productId, contractAddress, address, indexOfAccount) => async dispatch => {
-  const licenseId = await UjoLicensing.buyProduct(productId, address, contractAddress, indexOfAccount);
+export const buyProduct = (productId, storeId, address, indexOfAccount) => async (dispatch, getState) => {
+  const store = getState().store.getIn(['stores', storeId]).toJS()
+
+  const licenseId = await UjoLicensing.buyProduct(productId, address, store, indexOfAccount);
   dispatch({
     type: 'PRODUCT_PURCHASE',
     address,
-    contractAddress,
+    storeId,
     productId,
   });
 };
