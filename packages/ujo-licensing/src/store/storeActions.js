@@ -149,8 +149,11 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
   const random = Math.floor(Math.random() * 1000000000);
   // TODO: add fault tolerance
   // content
+  console.log('releaseInfo', releaseInfo);
   const files = [];
+  files.push(releaseInfo.releaseImage)
   releaseInfo.tracks.map(track => { files.push(track.file) });
+  console.log('files', files);
   const trackLocations = await uploadContent(files, storeId, random);
   // const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file, storeId, random)));
   console.log('trackLocations', trackLocations);

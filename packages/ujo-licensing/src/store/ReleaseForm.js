@@ -40,7 +40,7 @@ export class ReleaseForm extends React.Component {
       artistName: this.artistName.current.value,
 
       // release info
-      // releaseImage: this.releaseImage.current.value,
+      releaseImage: this.releaseImage.current.files[0],
       releaseName: this.releaseName.current.value,
       datePublished: this.date.current.value,
       description: this.description.current.value,
