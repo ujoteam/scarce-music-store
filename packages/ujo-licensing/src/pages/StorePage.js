@@ -37,7 +37,7 @@ export class StorePage extends React.Component {
           <Heading>Store: {storeName}</Heading>
           <div style={{ flexGrow: 1 }} />
           <Link
-            to={`/some-store/${match.params.storeId}`}
+            to={`/store/${match.params.storeId}`}
             style={{
               display: 'block',
               textDecoration: 'none',

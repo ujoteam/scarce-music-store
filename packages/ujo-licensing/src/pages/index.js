@@ -8,6 +8,7 @@ import DeveloperPage from './DeveloperPage';
 import StorePage from './StorePage';
 import ReleasePage from './ReleasePage';
 import ExternalStorePage from './ExternalStorePage';
+import ExternalCollectionPage from './ExternalCollectionPage';
 import App from './App';
 
 export default class AppRoutes extends React.Component {
@@ -18,7 +19,7 @@ export default class AppRoutes extends React.Component {
           <Switch>
             <Route exact path="/admin" component={AdminPage} />
             <Route exact path="/developers" component={DeveloperPage} />
-            <Route path="/some-store/:storeId" component={ExternalStorePage} />
+            <Route path="/store/:storeId" component={ExternalCollectionPage} />
             <Route path="/admin/store/:storeId" component={StorePage} />
             <Route path="/release/:storeId/:releaseId" component={ReleasePage} />
             <Route exact path="/" component={HomePage} />

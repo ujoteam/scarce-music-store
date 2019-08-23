@@ -99,12 +99,11 @@ export const login = (address, index) => async dispatch => {
   }
 };
 
-export const getProductsForContract = (contractAddress, storeId, ethAddress) => async dispatch => {
+export const getProductsForContract = (contractAddress, storeId) => async dispatch => {
   const { productIds, productData, soldData } = await UjoLicensing.getProductsForContract(contractAddress);
 
   dispatch({
     type: 'STORE_PRODUCT_INFO',
-    contractAddress,
     productIds,
     productData,
     soldData,
@@ -149,11 +148,9 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
   const random = Math.floor(Math.random() * 1000000000);
   // TODO: add fault tolerance
   // content
-  console.log('releaseInfo', releaseInfo);
   const files = [];
   files.push(releaseInfo.releaseImage)
   releaseInfo.tracks.map(track => { files.push(track.file) });
-  console.log('files', files);
   const trackLocations = await uploadContent(files, storeId, random);
   // const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file, storeId, random)));
   console.log('trackLocations', trackLocations);
@@ -192,6 +189,38 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
     storeId,
   });
 };
+
+export const getAllProductsInfo = storeId => async dispatch => {
+  // contract info
+  const resp = await axios.get(`${serverAddress}/stores?storeID=${storeId}`);
+  const storeInfo = resp.data;
+
+  // get info from contract
+  const { productIds, productData, soldData } = await UjoLicensing.getProductsForContract(storeInfo.LicenseInventory);
+  dispatch({
+    type: 'STORE_PRODUCT_INFO',
+    productIds,
+    productData,
+    soldData,
+    storeId,
+  });
+
+  // get metadata info
+  productIds.map(async releaseId => {
+    const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);
+
+    // const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo.LicenseInventory, releaseId);
+    // releaseContractInfo.productData.totalSold = releaseContractInfo.soldData;
+    dispatch({
+      type: 'RELEASE_INFO',
+      releaseInfo: res.data,
+      releaseId,
+      storeId,
+      // releaseContractInfo: releaseContractInfo.productData,
+      releaseContracts: resp.data,
+    });
+  })
+}
 
 export const getReleaseInfo = (releaseId, storeId) => async dispatch => {
   const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);

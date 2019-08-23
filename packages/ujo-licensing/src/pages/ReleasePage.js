@@ -110,6 +110,8 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
               <span>Release date: {releaseInfo.get('datePublished')}</span>
               <br />
               <span>Record Label: {releaseInfo.get('recordLabel')}</span>
+              <br />
+              <Link to={`/store/${match.params.storeId}`}>Back to Store</Link>
             </Box>
             <Box mr={20}>
               <div 
@@ -138,13 +140,13 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
               </Flex>
             ))}
           </Box>
-          <Box style={{ textAlign: 'right' }}>
-            <span>There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.</span>
-            <br />
-            <Button onClick={() => buyProduct(match.params.releaseId, licenseSale, currentAccount)}>
-              Buy Release - ${releaseInfo.get('price')}
-            </Button>
-          </Box>
+        </Box>
+        <Box style={{ textAlign: 'right' }}>
+          <span>There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.</span>
+          <br />
+          <Button onClick={() => buyProduct(match.params.releaseId, licenseSale, currentAccount)}>
+            Buy Release - ${releaseInfo.get('price')}
+          </Button>
         </Box>
       </Box>
     </Box>
