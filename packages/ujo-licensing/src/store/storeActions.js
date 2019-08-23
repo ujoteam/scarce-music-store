@@ -159,6 +159,7 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
 
   releaseInfo.tracks = releaseInfo.tracks.map((track, i) => ({
     name: track.name,
+    duration: track.duration,
     // url: trackLocations[i].original,
     // preview: trackLocations[i].preview,
   }));
@@ -224,12 +225,22 @@ export const getAllProductsInfo = storeId => async dispatch => {
   })
 }
 
-export const getReleaseInfo = (releaseId, storeId) => async dispatch => {
+export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch => {
   const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);
   const resp = await axios.get(`${serverAddress}/stores?storeID=${storeId}`);
   const storeInfo = resp.data;
 
   const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo.LicenseInventory, releaseId);
+
+  // check if user owns release
+  let owned = false;
+  // TODO: determine why this call to get ownedIds does not work...
+  // if (ethAddress) {
+  //   console.log('ethAddress', ethAddress)
+  //   console.log('storeInfo.LicenseInventory', storeInfo)
+  //   const ownedIds = await UjoLicensing.getOwnedProductIds(ethAddress, storeInfo.LicenseOwnership);
+  //   owned = ownedIds.indexOf(parseInt(releaseId)) > -1;
+  // }
   releaseContractInfo.productData.totalSold = releaseContractInfo.soldData;
   dispatch({
     type: 'RELEASE_INFO',
@@ -238,5 +249,6 @@ export const getReleaseInfo = (releaseId, storeId) => async dispatch => {
     storeId,
     releaseContractInfo: releaseContractInfo.productData,
     releaseContracts: resp.data,
+    owned,
   });
 };

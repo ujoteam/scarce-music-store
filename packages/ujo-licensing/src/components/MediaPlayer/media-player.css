@@ -1,0 +1,32 @@
+.rangeslider-horizontal {
+  height: 4px;
+  width: 100%;
+  display: inline-block;
+  z-index: 1;
+  background: gray;
+
+  border-radius: 2px;
+  box-shadow: none;
+  position: relative;
+  top: -2px;
+  overflow: hidden;
+}
+
+.rangeslider-horizontal:hover {
+  cursor: pointer;
+}
+
+.rangeslider-horizontal:hover .rangeslider__handle {
+  display: inline-block;
+}
+
+.rangeslider__fill {
+  background: #F23584;
+  height: 4px;
+
+  /* @include backgroundLinearGradient($ujo-brand-2, $ujo-brand-1); */
+}
+
+.rangeslider__handle {
+  display: none !important;
+}

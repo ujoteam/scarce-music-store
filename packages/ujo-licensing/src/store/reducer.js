@@ -70,6 +70,7 @@ const reducer = (state = fromJS(initialState), action) => {
                   .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseInfo)))
                   .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseContractInfo)))
                   .setIn(['stores', action.storeId, 'products', action.releaseId, 'id'], action.releaseId)
+                  .setIn(['stores', action.storeId, 'products', action.releaseId, 'owned'], action.owned || false)
     default:
       return state;
   }

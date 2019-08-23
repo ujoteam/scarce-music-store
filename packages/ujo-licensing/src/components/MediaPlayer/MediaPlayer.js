@@ -2,8 +2,6 @@ import React from 'react';
 import Immutable from 'immutable';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import classNames from 'classnames';
-import { connect } from 'react-redux';
 import { Box, Flex } from 'rimble-ui';
 
 import ProgressBar from './ProgressBar';
@@ -17,6 +15,8 @@ import {
   Next,
   Previous,
 } from '../Icons';
+
+import './media-player.css';
 
 function getFormattedTime(seconds) {
   const formattedMins = Math.floor(seconds / 60);
@@ -48,10 +48,6 @@ export class MediaPlayer extends React.Component {
     this.toggleVolume = this.toggleVolume.bind(this);
   }
 
-  componentDidMount() { document.body.classList.add('media-player-open'); }
-
-  componentWillUnmount() { document.body.classList.remove('media-player-open'); }
-
   onPlayPauseClick() {
     this.props.playPauseClick();
   }
@@ -80,11 +76,6 @@ export class MediaPlayer extends React.Component {
     // Create human readable representation of track position in seconds
     // eg. 185 seconds => 3:05
     const formattedPos = getFormattedTime(this.props.pos);
-
-    const longTitleClass = classNames('song-title', {
-      'long-title': this.props.track.get('name').length > 26,
-    });
-
     return (
       <div className="media-player-container">
         <Flex justifyContent="space-between" alignItems="center">
@@ -96,9 +87,21 @@ export class MediaPlayer extends React.Component {
             <span> - {this.props.release.get('releaseName')}</span>
           </Box>
           <Box>
-            <span title={this.props.track.get('name')} className={longTitleClass}>
+            <span title={this.props.track.get('name')}>
               {this.props.track.get('name')}
             </span>
+          </Box>
+          <Box width={200}>
+            <span className="current-pos-text">{formattedPos}</span>
+            <span style={{ width: '100px', display: 'inline-block', margin: '10px' }}>
+              <ProgressBar
+                total={10}
+                oneStepLength={1}
+                pos={this.props.pos}
+                onClick={(v) => this.props.progressBarChange(v)}
+                />
+            </span>
+            <span className="track-duration-text">{getFormattedTime(this.props.duration)}</span>
           </Box>
           <Box>
             <Previous
@@ -124,27 +127,10 @@ export class MediaPlayer extends React.Component {
               onClick={() => this.props.nextTrackClick()}
             />
           </Box>
-          <Box>
+          <Box mr={20}>
             {VolumeIcon}
-            {/* <ProgressBar
-              className="volume-slider hidden-sm-down"
-              total={1}
-              oneStepLength={10}
-              pos={this.props.volume}
-              onClick={(v) => this.props.volumeProgressBarChange(v)}
-            /> */}
           </Box>
         </Flex>
-        {/* <div className="progress-bar-container" role="progressbar">
-          <div className="current-pos-text">{formattedPos}</div>
-          <ProgressBar
-            total={this.props.track.get('durationInSeconds')}
-            oneStepLength={1}
-            pos={this.props.pos}
-            onClick={(v) => this.props.progressBarChange(v)}
-          />
-          <div className="track-duration-text">{this.props.track.get('duration')}</div>
-        </div> */}
       </div>
     );
   }

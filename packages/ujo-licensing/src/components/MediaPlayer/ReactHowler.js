@@ -80,6 +80,7 @@ export default class ReactHowler extends React.Component {
         html5: true,
       });
     }
+    window.h = this.howler;
   }
 
   // Stop, unload and destroy howler object
@@ -161,9 +162,9 @@ export default class ReactHowler extends React.Component {
       return 0;
     }
 
-    if (!pos && pos !== 0) {
-      return this.howler.seek();
-    }
+    // if (!pos && pos !== 0) {
+    //   return this.howler.seek();
+    // }
 
     if (pos || pos === 0) {
       this.howler.seek(pos);

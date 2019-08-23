@@ -46,7 +46,7 @@ const base = {
 const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized, releaseInfo, match, getReleaseInfo, setRelease, togglePlay, setCurrentTrackIndex, currentTrackIndex, playing, sameReleaseAsMP }) => {
   useEffect(() => {
     if (web3Initialized) {
-      getReleaseInfo(match.params.releaseId, match.params.storeId);
+      getReleaseInfo(match.params.releaseId, match.params.storeId, currentAccount);
     }
   }, [match.params.releaseId, match.params.storeId, web3Initialized]);
 

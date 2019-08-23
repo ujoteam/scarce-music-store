@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react';
 import Slider from 'react-rangeslider';
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
 
 export default class ProgressBar extends React.PureComponent {
   // static propTypes = {
@@ -49,25 +48,18 @@ export default class ProgressBar extends React.PureComponent {
     ? this.state.posPercent
     : percentComplete * 100;
 
-    const sliderClassNames = classNames(
-      `progress-bar-container ${this.props.className}`,
-      { showHandle: this.props.showHandle },
-    );
-
     return (
-      <Fragment>
-        <div className={sliderClassNames} role="progressbar">
-          <Slider
-            min={0}
-            max={100}
-            step={this.props.oneStepLength}
-            value={positionValueDisplayed}
-            onChange={v => this.onPositionChange(v)}
-            onChangeComplete={() => this.onPositionComplete()}
-            tooltip={false}
-          />
-        </div>
-      </Fragment>
+      <span role="progressbar">
+        <Slider
+          min={0}
+          max={100}
+          step={this.props.oneStepLength}
+          value={positionValueDisplayed}
+          onChange={v => this.onPositionChange(v)}
+          onChangeComplete={() => this.onPositionComplete()}
+          tooltip={false}
+        />
+      </span>
     );
   }
 }

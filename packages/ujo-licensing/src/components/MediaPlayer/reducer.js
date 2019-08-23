@@ -23,6 +23,8 @@ const reducer = (state = fromJS(initialState), action) => {
   switch (action.type) {
     case 'TOGGLE_PLAY':
       return state.set('playing', !state.get('playing'));
+    case 'SET_PLAYING':
+      return state.set('playing', true);
     case 'SEEK':
       return state.set('pos', action.pos);
     case 'UPDATE_TRACK':

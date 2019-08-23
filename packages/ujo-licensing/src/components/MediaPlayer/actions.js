@@ -4,6 +4,12 @@ export function togglePlay() {
   };
 }
 
+export function setPlaying() {
+  return {
+    type: 'SET_PLAYING',
+  };
+}
+
 export function setRelease(release, contractAddress, index = 0) {
   return {
     type: 'SET_RELEASE',

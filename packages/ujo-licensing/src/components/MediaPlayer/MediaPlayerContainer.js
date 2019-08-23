@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import MediaPlayer from './MediaPlayer';
 import ReactHowler from './ReactHowler';
 // import { AUDIO_PROXY_ENDPOINT } from '../../constants/endpoints';
-import { togglePlay, seek, setVolume, nextTrack, prevTrack } from './actions';
+import { togglePlay, seek, setVolume, nextTrack, prevTrack, setPlaying } from './actions';
 import { jwt } from '../../fetch'
 
 export class MediaPlayerContainer extends React.Component {
@@ -39,7 +39,7 @@ export class MediaPlayerContainer extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (!prevProps.playing && this.props.playing) {
-      setTimeout(this.updatePos, 100);
+      setTimeout(() => this.updatePos(), 100);
     }
     // html5 hack for releases with one song
     // when user hits next or previous song
@@ -62,13 +62,14 @@ export class MediaPlayerContainer extends React.Component {
   };
 
   progressBarChangeHandler(progressPercentage) {
-    const duration = this.props.currentTrack.get('durationInSeconds');
+    const duration = this.props.duration;
+    console.log('progressPercentage', progressPercentage)
     this.setState(
       {
         pos: progressPercentage * duration,
       },
       () => {
-        this.player.seek(this.state.pos);
+        this.player.current.howler.seek(this.state.pos);
         this.props.seek(this.state.pos);
       },
     );
@@ -80,21 +81,22 @@ export class MediaPlayerContainer extends React.Component {
   };
 
   updatePos() {
-    if (!this.player) return;
+    if (!this.player.current.howler) return;
 
-    const currentPosition = this.player.seek();
+    const currentPosition = this.player.current.howler.seek();
+    this.setState({ pos: currentPosition });
     if (typeof currentPosition === 'number') {
       // HTML5 does not auto play so check if seek is
       // (almost) at duration and if so, call next track
       // TODO: remove would be great - improve Howler...
-      const duration = this.props.currentTrack.get('durationInSeconds');
+      const duration = this.props.duration;
       const isAtEnd = duration - currentPosition < 1;
       if (isAtEnd) this.nextTrackHandler();
     }
 
     // If we are still playing, we want to continue to update the pos
     if (this.props.playing) {
-      setTimeout(this.updatePos, 1000);
+      setTimeout(() => this.updatePos(), 1000);
     }
   };
 
@@ -109,6 +111,7 @@ export class MediaPlayerContainer extends React.Component {
       <Fragment>
         <MediaPlayer
           pos={this.state.pos}
+          duration={this.props.duration}
           volume={this.props.volume}
           volumeProgressBarChange={v => this.volumeSliderChangeHandler(v)}
           track={this.props.currentTrack}
@@ -118,13 +121,13 @@ export class MediaPlayerContainer extends React.Component {
           playPauseClick={this.props.togglePlay}
           nextTrackClick={() => this.props.nextTrack()}
           prevTrackClick={() => this.props.prevTrack()}
-          progressBarChange={this.progressBarChangeHandler}
+          progressBarChange={(v) => this.progressBarChangeHandler(v)}
           openPlaylistModal={() => this.setState({ playlistModal: true })}
         />
         <ReactHowler
           src={src}
           playing={this.props.playing}
-          onPlay={() => console.log('PLAYYYYY')}
+          onPlay={() => this.props.setPlaying()}
           onPause={() => console.log('PAUSEEE')}
           onLoad={() => this.onLoadHandler}
           onEnd={() => this.nextTrackHandler}
@@ -140,11 +143,13 @@ export class MediaPlayerContainer extends React.Component {
 function mapStateToProps(state) {
   const trackIndex = state.mediaPlayer.get('currentTrackIndex');
   const currentTrack = state.mediaPlayer.getIn(['release', 'tracks', trackIndex]);
+  const owned = state.mediaPlayer.getIn(['release', 'owned']);
   return {
     playing: state.mediaPlayer.get('playing'),
     loading: state.mediaPlayer.get('loading'),
     volume: state.mediaPlayer.get('volume'),
     trackCount: state.mediaPlayer.get('trackCount'),
+    duration: owned ? currentTrack.get('duration') : 10,
     currentTrack,
     currentTrackIndex: trackIndex,
     release: state.mediaPlayer.get('release'),
@@ -156,6 +161,7 @@ export default connect(
   mapStateToProps,
   {
     togglePlay,
+    setPlaying,
     // setLoading,
     seek,
     setVolume,
