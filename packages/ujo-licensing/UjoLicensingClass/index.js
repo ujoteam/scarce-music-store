@@ -53,7 +53,7 @@ class UjoLicensing {
     });
   }
 
-  initializeContractIfNotExist(contractJSON, contractAddress, indexOfAccount) {
+  initializeContractIfNotExist(contractJSON, contractAddress, indexOfAccount = 0) {
     if (!this.contractInstances[indexOfAccount]) this.contractInstances[indexOfAccount] = {};
     const inStorage = this.contractInstances[indexOfAccount][contractAddress];
     if (inStorage) return inStorage;
@@ -109,17 +109,32 @@ class UjoLicensing {
     // newGas = ethers.utils.hexlify(Number(newGas));
     // const result = await factory.deploy({ gasLimit: newGas });
 
-    const saleResult = await saleFactory.deploy();
-    const inventoryResult = await inventoryFactory.deploy();
-    const ownershipResult = await ownershipFactory.deploy();
-    console.log('Sale Contract deployed to', saleResult.address);
-    console.log('Inventory Contract deployed to', inventoryResult.address);
-    console.log('Ownership Contract deployed to', ownershipResult.address);
+    const saleInstance = await saleFactory.deploy();
+    const inventoryInstance = await inventoryFactory.deploy();
+    const ownershipInstance = await ownershipFactory.deploy();
+
+    // Have to await each contract's `deployed()` method to ensure that we don't proceed until
+    // the contract deployment txs have actually been mined
+    await Promise.all([
+      saleInstance.deployed(),
+      inventoryInstance.deployed(),
+      ownershipInstance.deployed(),
+    ])
+
+    console.log('Sale Contract deployed to', saleInstance.address);
+    console.log('Inventory Contract deployed to', inventoryInstance.address);
+    console.log('Ownership Contract deployed to', ownershipInstance.address);
+
+    await inventoryInstance.setSaleController(saleInstance.address)
+    await saleInstance.setDAIContract(process.env.DAI_CONTRACT_ADDRESS)
+    await saleInstance.setInventoryContract(inventoryInstance.address)
+    await saleInstance.setOwnershipContract(ownershipInstance.address)
+    await ownershipInstance.setSaleController(saleInstance.address)
 
     const result = {
-      LicenseSale: saleResult.address,
-      LicenseInventory: inventoryResult.address,
-      LicenseOwnership: ownershipResult.address,
+      LicenseSale: saleInstance.address,
+      LicenseInventory: inventoryInstance.address,
+      LicenseOwnership: ownershipInstance.address,
     };
 
     console.log(result);
@@ -211,16 +226,18 @@ class UjoLicensing {
     };
   }
 
-  async buyProduct(productId, address, contractAddress, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
-    const productInfo = await ContractInstance.productInfo(productId);
+  async buyProduct(productId, address, contractAddresses, indexOfAccount) {
+      console.log('ULC buyProduct ~>', { productId, address, contractAddresses, DAI: process.env.DAI_CONTRACT_ADDRESS, indexOfAccount })
+    const LicenseInventoryInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddresses.LicenseInventory, indexOfAccount);
+    const productInfo = await LicenseInventoryInstance.productInfo(productId);
+    console.log('ULC productInfo ~>', productInfo)
 
-    const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddress, indexOfAccount);
+    const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddresses.LicenseSale, indexOfAccount);
 
     // TODO - Import ERC20
-    const ERC20Instance = this.initializeContractIfNotExist(ERC20, contractAddress, indexOfAccount);
+    const ERC20Instance = this.initializeContractIfNotExist(ERC20, process.env.DAI_CONTRACT_ADDRESS, indexOfAccount);
     await ERC20Instance.approve(LicenseSaleInstance.address, productInfo.price);
-    const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS);
+    const license = await LicenseSaleInstance.purchase(productId, 1, address, ZERO_ADDRESS);
 
     // const gas = this.boostGas(estimatedGas);
     // const license = await ContractInstance.purchase(productId, 1, address, ZERO_ADDRESS)
