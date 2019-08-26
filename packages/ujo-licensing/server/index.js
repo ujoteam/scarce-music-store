@@ -147,16 +147,7 @@ app.get(
       stores = await redis.getStores();
     }
     stores = await redis.getStores({ userAddress: req.user.ethAddress });
-
-  } else if (req.query.storeID)) {
-  const [store] = await redis.getStores({ storeIDs: [req.query.storeID] })
-  return res.json(store)
-
-} else {
-  stores = await redis.getStores()
-}
-
-res.json(stores);
+    res.json(stores);
   }),
 );
 
@@ -194,12 +185,12 @@ app.post('/upload/:storeID/:productID', asyncMW(async (req, res) => {
 
   const uploadOps = [];
   busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
-    if (mimetype.includes('image')) {
-      const jpegFile = ffmpeg(fileStream)
-        .format('singlejpeg')
-        .pipe();
-      uploadOps.push(pipeFileToS3(jpegFile, filename, BUCKET_NAME, 'public-read'));
-    } else {
+    // if (mimetype.includes('image')) {
+    //   const jpegFile = ffmpeg(fileStream)
+    //     .format('singlejpeg')
+    //     .pipe();
+    //   uploadOps.push(pipeFileToS3(jpegFile, filename, BUCKET_NAME, 'public-read'));
+    // } else {
       const trackIndex = uploadOps.length / 2;
 
       const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
@@ -215,7 +206,7 @@ app.post('/upload/:storeID/:productID', asyncMW(async (req, res) => {
 
       uploadOps.push(pipeFileToS3(originalFile, originalFilename, BUCKET_NAME, 'private'));
       uploadOps.push(pipeFileToS3(previewFile, previewFilename, BUCKET_NAME, 'private'));
-    }
+    // }
   });
 
   busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
