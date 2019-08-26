@@ -68,3 +68,7 @@ coverage.json
 /server/db.json
 /dist/bundle.js
 /dist/UjoLicensingClass/
+
+static/
+build/
+dist/

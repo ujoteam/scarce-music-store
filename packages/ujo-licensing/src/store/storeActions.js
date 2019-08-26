@@ -66,7 +66,7 @@ export const deployStore = (address, indexOfAccount, name) => async dispatch => 
   try {
     // should add a new contract to the user
     res = await fetch.deployStore(contractAddresses);
-    // res = await axios.post(`${serverAddress}/stores`, { contractAddresses });
+    // res = await axios.post(`/stores`, { contractAddresses });
     dispatch({
       type: 'DEPLOY_STORE',
       address,
@@ -81,8 +81,11 @@ export const deployStore = (address, indexOfAccount, name) => async dispatch => 
 export const login = (address, index) => async dispatch => {
   try {
     const jwt = window.localStorage.getItem(`jwt-${address}`);
-    if (jwt) fetch.setJWT(jwt);
-    else {
+    if (jwt) {
+      fetch.setJWT(jwt);
+      dispatch(changeAddress(address, jwt))
+
+    } else {
       const resp = await fetch.getLoginChallenge(address);
       const challenge = resp.data.challenge[1].value;
       const signature = await UjoLicensing.signData(challenge, index);
@@ -173,10 +176,10 @@ export const createScarceRelease = (
   releaseInfo.image = releaseInfo.releaseImage.name;
 
   // metadata
-  const res = await axios.post(`${serverAddress}/metadata/${storeId}/${random}`, releaseInfo);
+  const res = await axios.post(`/metadata/${storeId}/${random}`, releaseInfo);
 
   // // check metadata
-  // const resp = await axios.get(`${serverAddress}/metadata/${contractAddress}/${random}`);
+  // const resp = await axios.get(`/metadata/${contractAddress}/${random}`);
   // console.log('METADATA: ', resp.data);
 
   // contract
@@ -202,7 +205,7 @@ export const createScarceRelease = (
 
 export const getAllProductsInfo = storeId => async dispatch => {
   // contract info
-  const resp = await axios.get(`${serverAddress}/stores?storeID=${storeId}`);
+  const resp = await axios.get(`/stores?storeID=${storeId}`);
   const storeInfo = resp.data;
 
   // get info from contract
@@ -217,7 +220,7 @@ export const getAllProductsInfo = storeId => async dispatch => {
 
   // get metadata info
   productIds.map(async releaseId => {
-    const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);
+    const res = await axios.get(`/metadata/${storeId}/${releaseId}`);
 
     // const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo.LicenseInventory, releaseId);
     // releaseContractInfo.productData.totalSold = releaseContractInfo.soldData;
@@ -233,8 +236,8 @@ export const getAllProductsInfo = storeId => async dispatch => {
 };
 
 export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch => {
-  const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);
-  const resp = await axios.get(`${serverAddress}/stores?storeID=${storeId}`);
+  const res = await axios.get(`/metadata/${storeId}/${releaseId}`);
+  const resp = await axios.get(`/stores?storeID=${storeId}`);
   const storeInfo = resp.data;
 
   const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo, releaseId);

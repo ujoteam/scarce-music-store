@@ -21,16 +21,16 @@ const ffmpeg = require('fluent-ffmpeg');
 const { pipeFileToS3 } = require('./s3');
 
 AWS.config.update({
-  region: process.env.AWS_DEFAULT_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
 });
 
 const BUCKET_NAME = 'ujo-licensing-media';
 
 // const s3 = new AWS.S3({
-//   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+//   accessKeyId: process.env.AWS_ACCESS_KEY,
+//   secretAccessKey: process.env.AWS_SECRET_KEY,
 // });
 
 const redis = require('./redis');
@@ -40,7 +40,7 @@ const UjoLicensing = require('../dist/UjoLicensingClass');
 const ERC20 = require('../UjoLicensingClass/ERC20.json');
 
 // ES6 quirk. could be fixed by transpiling everything
-const UjoLicense = new UjoLicensing.default(new Ethers.providers.JsonRpcProvider('http://localhost:8545'));
+const UjoLicense = new UjoLicensing.default(new Ethers.providers.JsonRpcProvider(process.env.ETH_NODE_HOST));
 
 const songs = [
   'https://freemusicarchive.org/file/music/no_curator/spectacular/What_Whas_That/spectacular_-_01_-_What_Was_That_Spectacular_Sound_Productions.mp3',
@@ -70,6 +70,8 @@ if (process.env.NODE_ENV !== 'production') {
 redis.init();
 const port = process.env.PORT || '3001';
 const app = express();
+app.use(express.static(path.join(__dirname, 'static')));
+
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
@@ -100,8 +102,6 @@ const asyncMW = fn => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-app.use('/', express.static('.'));
-
 //
 // Authentication, step 1.  Request a challenge message from the server which will be signed by the user.
 //
@@ -131,9 +131,7 @@ app.get('/login/:MetaMessage/:MetaSignature', metaAuth, asyncMW(async (req, res)
 //
 // Fetch the list of stores deployed by the current user.
 //
-app.get(
-  '/stores',
-  asyncMW(async (req, res) => {
+app.get('/stores', asyncMW(async (req, res) => {
     let stores;
     if (req.query.mine) {
       if (!req.user || !req.user.ethAddress) {
@@ -141,7 +139,7 @@ app.get(
       }
       stores = await redis.getStores({ userAddress: req.user.ethAddress });
     } else if (req.query.storeID) {
-      const [store] = await redis.getStores({ storeIDs: [req.query.storeID] });
+      const [ store ] = await redis.getStores({ storeIDs: [ req.query.storeID ] });
       return res.json(store);
     } else {
       stores = await redis.getStores();
@@ -154,9 +152,7 @@ app.get(
 //
 // Tell the backend that you've deployed a store contract.
 //
-app.post(
-  '/stores',
-  asyncMW(async (req, res) => {
+app.post('/stores', asyncMW(async (req, res) => {
     if (!req.user || !req.user.ethAddress) {
       return res.status(403).json({ error: 'you are not logged in' });
     }

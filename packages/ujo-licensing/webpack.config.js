@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const DotenvPlugin = require('dotenv-webpack')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   entry: './src/main.js',
@@ -61,6 +62,7 @@ module.exports = {
       $: 'jquery',
       jQuery: 'jquery',
     }),
+    new HtmlWebpackPlugin({ template: __dirname + '/src/index.html' }),
   ],
   watchOptions: {
     poll: 500,

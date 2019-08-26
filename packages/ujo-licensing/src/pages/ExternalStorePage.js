@@ -116,7 +116,7 @@ export class ExternalStorePage extends React.Component {
                   {numOwned > 0 && (
                     <div>
                       <ReactAudioPlayer
-                        src={`http://localhost:3001/content/${storeId}/${key}/0?jwt=${jwt}` /* @@TODO: track '0' is hard-coded here, make it selectable */}
+                        src={`/content/${storeId}/${key}/0?jwt=${jwt}` /* @@TODO: track '0' is hard-coded here, make it selectable */}
                         controls
                         onError={err => console.error('AUDIO ERR ~>', err)}
                         onCanPlay={() => this.onCanPlay(key)}

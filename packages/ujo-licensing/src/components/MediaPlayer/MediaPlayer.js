@@ -77,7 +77,13 @@ export class MediaPlayer extends React.Component {
     // eg. 185 seconds => 3:05
     const formattedPos = getFormattedTime(this.props.pos);
     return (
-      <div className="media-player-container">
+      <div className="media-player-container" style={{
+        position: 'fixed',
+        zIndex: 999,
+        bottom: 0,
+        backgroundColor: 'white',
+        width: '100%',
+      }}>
         <Flex justifyContent="space-between" alignItems="center">
           <Link to="/release/499">
             <Box style={{height: '60px', width: '60px', background: 'black', display: 'inline-block'}}/>
