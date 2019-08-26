@@ -6,9 +6,8 @@ import { Box, Flex, Heading, Text, Button } from 'rimble-ui';
 
 import p0 from '../img/pexels0.jpeg';
 import { getReleaseInfo, buyProduct } from '../store/storeActions';
-import { setRelease } from '../components/MediaPlayer/actions';
+import { setRelease, togglePlay, setCurrentTrackIndex } from '../components/MediaPlayer/actions';
 import { PlayBig, PauseBig, Play, Pause } from '../components/Icons';
-import { togglePlay, setCurrentTrackIndex } from '../components/MediaPlayer/actions';
 
 // const photos = [p0, p1, p2, p3, p4, p5, p6, p7, p8, p9];
 
@@ -43,7 +42,21 @@ const base = {
   ],
 };
 
-const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized, releaseInfo, match, getReleaseInfo, setRelease, togglePlay, setCurrentTrackIndex, currentTrackIndex, playing, sameReleaseAsMP }) => {
+const ReleasePage = ({
+  buyProduct,
+  currentAccount,
+  licenseSale,
+  web3Initialized,
+  releaseInfo,
+  match,
+  getReleaseInfo,
+  setRelease,
+  togglePlay,
+  setCurrentTrackIndex,
+  currentTrackIndex,
+  playing,
+  sameReleaseAsMP,
+}) => {
   useEffect(() => {
     if (web3Initialized) {
       getReleaseInfo(match.params.releaseId, match.params.storeId, currentAccount);
@@ -65,6 +78,7 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
   };
 
   const salesLeft = releaseInfo.get('totalSupply') - releaseInfo.get('totalSold');
+
   return (
     <Box position="relative" minHeight="100vh" style={{ overflow: 'hidden' }}>
       <Box
@@ -75,7 +89,7 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
         bottom="-100px"
         zIndex="-1"
         style={{
-          backgroundImage: `url("${p0}")`,
+          backgroundImage: `url("https://ujo-licensing-media.s3.amazonaws.com/${releaseInfo.get('image')}")`,
           backgroundSize: 'cover',
           filter: 'blur(20px)',
         }}
@@ -94,7 +108,7 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
             width="100%"
             borderRadius="8px"
             style={{
-              backgroundImage: `url("${p0}")`,
+              backgroundImage: `url("https://ujo-licensing-media.s3.amazonaws.com/${releaseInfo.get('image')}")`,
               backgroundSize: 'cover',
               paddingBottom: '100%',
             }}
@@ -118,10 +132,11 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
                 style={{ margin: '0 10px', background: '#F23584', borderRadius: '50%', padding: '16px 20px ' }}
                 onClick={() => onPlayPauseClick()}
               >
-                {playing && sameReleaseAsMP
-                  ? <PauseBig h={40} w={40} activeColor="#DADADA" inactiveColor="white" />
-                  : <PlayBig h={40} w={40} activeColor="#DADADA" inactiveColor="white" />
-                }
+                {playing && sameReleaseAsMP ? (
+                  <PauseBig h={40} w={40} activeColor="#DADADA" inactiveColor="white" />
+                ) : (
+                  <PlayBig h={40} w={40} activeColor="#DADADA" inactiveColor="white" />
+                )}
               </div>
             </Box>
           </Flex>
@@ -132,20 +147,23 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
                   {i + 1} {track.get('name')}
                 </span>
                 <span onClick={() => onTrackClick(i)}>
-                  {playing && sameReleaseAsMP && currentTrackIndex === i
-                    ? <Pause activeColor="#f23584" inactiveColor="#DADADA" />
-                    : <Play activeColor="#f23584" inactiveColor="#DADADA" />
-                  }
+                  {playing && sameReleaseAsMP && currentTrackIndex === i ? (
+                    <Pause activeColor="#f23584" inactiveColor="#DADADA" />
+                  ) : (
+                    <Play activeColor="#f23584" inactiveColor="#DADADA" />
+                  )}
                 </span>
               </Flex>
             ))}
           </Box>
         </Box>
         <Box style={{ textAlign: 'right' }}>
-          <span>There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.</span>
+          <span>
+            There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.
+                              </span>
           <br />
           <Button onClick={() => buyProduct(match.params.releaseId, match.params.storeId, currentAccount)}>
-            Buy Release - ${releaseInfo.get('price')}
+            Buy Release - $            {releaseInfo.get('price')}
           </Button>
         </Box>
       </Box>
@@ -155,7 +173,9 @@ const ReleasePage = ({ buyProduct, currentAccount, licenseSale, web3Initialized,
 
 export default connect(
   (state, ownProps) => ({
-    releaseInfo: state.store.getIn(['stores', ownProps.match.params.storeId, 'products', ownProps.match.params.releaseId]) || fromJS(base),
+    releaseInfo:
+      state.store.getIn(['stores', ownProps.match.params.storeId, 'products', ownProps.match.params.releaseId]) ||
+      fromJS(base),
     licenseSale: state.store.getIn(['stores', ownProps.match.params.storeId, 'LicenseSale']),
     playing: state.mediaPlayer.get('playing'),
     sameReleaseAsMP: state.mediaPlayer.getIn(['release', 'id']) === ownProps.match.params.releaseId,

@@ -37,7 +37,7 @@ const redis = require('./redis');
 const MetaAuth = require('../meta-auth');
 // const LicenseContract = require('../UjoLicensingClass/LicenseCore.json');
 const UjoLicensing = require('../dist/UjoLicensingClass');
-const ERC20 = require('../UjoLicensingClass/ERC20.json')
+const ERC20 = require('../UjoLicensingClass/ERC20.json');
 
 // ES6 quirk. could be fixed by transpiling everything
 const UjoLicense = new UjoLicensing.default(new Ethers.providers.JsonRpcProvider('http://localhost:8545'));
@@ -67,7 +67,7 @@ if (process.env.NODE_ENV !== 'production') {
   // web3 = new Ethers(new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/${infuraApi}`));
 }
 
-redis.init()
+redis.init();
 const port = process.env.PORT || '3001';
 const app = express();
 app.use(bodyParser.json()); // support json encoded bodies
@@ -96,10 +96,11 @@ app.use(
 
 // Set up some middleware
 const metaAuth = new MetaAuth({ banner: 'Ujo Licensing' });
-const asyncMW = fn => (req, res, next) => { Promise.resolve(fn(req, res, next)).catch(next) }
+const asyncMW = fn => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
 app.use('/', express.static('.'));
-
 
 //
 // Authentication, step 1.  Request a challenge message from the server which will be signed by the user.
@@ -130,39 +131,52 @@ app.get('/login/:MetaMessage/:MetaSignature', metaAuth, asyncMW(async (req, res)
 //
 // Fetch the list of stores deployed by the current user.
 //
-app.get('/stores', asyncMW(async (req, res) => {
-  let stores
-  if (req.query.mine) {
-    if (!req.user || !req.user.ethAddress) {
-      return res.status(400).json({ error: 'cannot specify "mine" when not logged in' })
+app.get(
+  '/stores',
+  asyncMW(async (req, res) => {
+    let stores;
+    if (req.query.mine) {
+      if (!req.user || !req.user.ethAddress) {
+        return res.status(400).json({ error: 'cannot specify "mine" when not logged in' });
+      }
+      stores = await redis.getStores({ userAddress: req.user.ethAddress });
+    } else if (req.query.storeID) {
+      const [store] = await redis.getStores({ storeIDs: [req.query.storeID] });
+      return res.json(store);
+    } else {
+      stores = await redis.getStores();
     }
-    stores = await redis.getStores({ userAddress: req.user.ethAddress })
+    stores = await redis.getStores({ userAddress: req.user.ethAddress });
 
-  } else if (req.query.storeID) {
-    const [ store ] = await redis.getStores({ storeIDs: [ req.query.storeID ] })
-    return res.json(store)
+  } else if (req.query.storeID)) {
+  const [store] = await redis.getStores({ storeIDs: [req.query.storeID] })
+  return res.json(store)
 
-  } else {
-    stores = await redis.getStores()
-  }
+} else {
+  stores = await redis.getStores()
+}
 
-  res.json(stores)
-}))
+res.json(stores);
+  }),
+);
 
 //
 // Tell the backend that you've deployed a store contract.
 //
-app.post('/stores', asyncMW(async (req, res) => {
-  if (!req.user || !req.user.ethAddress) {
-    return res.status(403).json({ error: 'you are not logged in' })
-  }
+app.post(
+  '/stores',
+  asyncMW(async (req, res) => {
+    if (!req.user || !req.user.ethAddress) {
+      return res.status(403).json({ error: 'you are not logged in' });
+    }
 
-  const userAddress = req.user.ethAddress;
+    const userAddress = req.user.ethAddress;
 
-  await redis.addStore(userAddress, req.body)
+    await redis.addStore(userAddress, req.body);
 
-  res.json({})
-}))
+    res.json({});
+  }),
+);
 
 //
 // Upload new content.
@@ -180,21 +194,28 @@ app.post('/upload/:storeID/:productID', asyncMW(async (req, res) => {
 
   const uploadOps = [];
   busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
-    const trackIndex = uploadOps.length / 2;
+    if (mimetype.includes('image')) {
+      const jpegFile = ffmpeg(fileStream)
+        .format('singlejpeg')
+        .pipe();
+      uploadOps.push(pipeFileToS3(jpegFile, filename, BUCKET_NAME, 'public-read'));
+    } else {
+      const trackIndex = uploadOps.length / 2;
 
-    const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
-    const originalFile = ffmpeg(fileStream)
-      .format('mp3')
-      .pipe();
+      const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
+      const originalFile = ffmpeg(fileStream)
+        .format('mp3')
+        .pipe();
 
-    const previewFilename = `${storeID}/${productID}/${trackIndex}-preview.mp3`;
-    const previewFile = ffmpeg(originalFile)
-      .format('mp3')
-      .duration(10)
-      .pipe();
+      const previewFilename = `${storeID}/${productID}/${trackIndex}-preview.mp3`;
+      const previewFile = ffmpeg(originalFile)
+        .format('mp3')
+        .duration(10)
+        .pipe();
 
-    uploadOps.push(pipeFileToS3(originalFile, originalFilename, BUCKET_NAME));
-    uploadOps.push(pipeFileToS3(previewFile, previewFilename, BUCKET_NAME));
+      uploadOps.push(pipeFileToS3(originalFile, originalFilename, BUCKET_NAME, 'private'));
+      uploadOps.push(pipeFileToS3(previewFile, previewFilename, BUCKET_NAME, 'private'));
+    }
   });
 
   busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
@@ -221,17 +242,17 @@ app.get('/content/:storeID/:productID/:trackIndex', asyncMW(async (req, res) => 
   const { storeID, productID, trackIndex } = req.params;
   const { download } = req.query;
 
-  const [ store ] = await redis.getStores({ storeIDs: [ storeID ] })
+  const [store] = await redis.getStores({ storeIDs: [storeID] });
 
   if (!store) {
-    return res.status(404).send()
+    return res.status(404).send();
   }
 
-  let userOwnsLicense = false
+  let userOwnsLicense = false;
   if (ethAddress) {
-    let productIds = await UjoLicense.getOwnedProductIds(ethAddress, store, 0)
-    productIds = productIds.map(id => id.toString())
-    userOwnsLicense = productIds.indexOf(productID) > -1
+    let productIds = await UjoLicense.getOwnedProductIds(ethAddress, store, 0);
+    productIds = productIds.map(id => id.toString());
+    userOwnsLicense = productIds.indexOf(productID) > -1;
   }
 
   // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
@@ -266,53 +287,60 @@ app.get('/metadata/:storeID/:productID', asyncMW(async (req, res) => {
   const { storeID, productID } = req.params;
   const metadata = await redis.getMetadata(storeID, productID);
   metadata.tracks = metadata.tracks || [];
+
+  console.log(metadata);
   res.json(metadata);
 }));
 
 //
 // Store metadata for the given productID
 //
-app.post('/metadata/:storeID/:productID', asyncMW(async (req, res) => {
-  const { storeID, productID } = req.params;
-  const metadata = await redis.setMetadata(storeID, productID, req.body);
-  res.json({});
-}))
+app.post(
+  '/metadata/:storeID/:productID',
+  asyncMW(async (req, res) => {
+    const { storeID, productID } = req.params;
+    const metadata = await redis.setMetadata(storeID, productID, req.body);
+    res.json({});
+  }),
+);
 
 //
 // Replenish the requesting user's ETH + DAI
 //
-app.get('/faucet', asyncMW(async (req, res, next) => {
-  console.log('faucet route', req.user)
-  if (!req.user) {
-    return res.status(403).json({})
-  }
+app.get(
+  '/faucet',
+  asyncMW(async (req, res, next) => {
+    console.log('faucet route', req.user);
+    if (!req.user) {
+      return res.status(403).json({});
+    }
 
-  const { ethAddress } = req.user
-  const backendWallet = Ethers.Wallet.fromMnemonic(process.env.ETH_MNEMONIC).connect(UjoLicense.provider)
+    const { ethAddress } = req.user;
+    const backendWallet = Ethers.Wallet.fromMnemonic(process.env.ETH_MNEMONIC).connect(UjoLicense.provider);
 
-  const ethMax = Ethers.utils.parseEther(process.env.MAX_FAUCET_ETH_AMOUNT || '1.0')
-  const daiMax = Ethers.utils.bigNumberify(process.env.MAX_FAUCET_DAI_AMOUNT || '10000')
+    const ethMax = Ethers.utils.parseEther(process.env.MAX_FAUCET_ETH_AMOUNT || '1.0');
+    const daiMax = Ethers.utils.bigNumberify(process.env.MAX_FAUCET_DAI_AMOUNT || '10000');
 
-  const ethBalance = await UjoLicense.provider.getBalance(ethAddress)
-  if (ethBalance.lt( ethMax )) {
-    const weiToSend = ethMax.sub(ethBalance)
-    const ethTx = await backendWallet.sendTransaction({ to: ethAddress, value: weiToSend })
-    console.log('ethTx ~>', ethTx)
-  }
+    const ethBalance = await UjoLicense.provider.getBalance(ethAddress);
+    if (ethBalance.lt(ethMax)) {
+      const weiToSend = ethMax.sub(ethBalance);
+      const ethTx = await backendWallet.sendTransaction({ to: ethAddress, value: weiToSend });
+      console.log('ethTx ~>', ethTx);
+    }
 
+    const daiContractInstance = new Ethers.Contract(process.env.DAI_CONTRACT_ADDRESS, ERC20.abi, backendWallet);
+    const daiBalance = await daiContractInstance.balanceOf(ethAddress);
+    if (daiBalance.lt(daiMax)) {
+      const daiToSend = daiMax.sub(daiBalance);
+      const daiTx = await daiContractInstance.transfer(ethAddress, daiToSend);
+      console.log('daiTx ~>', daiTx);
+    }
 
-  const daiContractInstance = new Ethers.Contract(process.env.DAI_CONTRACT_ADDRESS, ERC20.abi, backendWallet);
-  const daiBalance = await daiContractInstance.balanceOf(ethAddress)
-  if (daiBalance.lt( daiMax )) {
-    const daiToSend = daiMax.sub(daiBalance)
-    const daiTx = await daiContractInstance.transfer(ethAddress, daiToSend)
-    console.log('daiTx ~>', daiTx)
-  }
+    console.log('DAI bal ~>', (await daiContractInstance.balanceOf(ethAddress)).toString());
 
-  console.log('DAI bal ~>', (await daiContractInstance.balanceOf(ethAddress)).toString())
-
-  return res.status(200).json({ result: 'sent you some ETH' })
-}))
+    return res.status(200).json({ result: 'sent you some ETH' });
+  }),
+);
 
 //
 // Error handler

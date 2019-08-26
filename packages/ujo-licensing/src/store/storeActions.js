@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { ethers } from 'ethers';
 import axios from 'axios';
 import LicensingHelper from '../../UjoLicensingClass';
 import * as fetch from '../fetch';
@@ -9,13 +9,13 @@ let UjoLicensing;
 
 // actions
 export const initWeb3 = () => async dispatch => {
-  let provider
-  let accounts
+  let provider;
+  let accounts;
   if (window.ethereum) {
-    provider = new ethers.providers.Web3Provider(window.ethereum)
-    accounts = await window.ethereum.enable()
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    accounts = await window.ethereum.enable();
   } else {
-    throw new Error(`We haven't implemented anything but Metamask yet`)
+    throw new Error(`We haven't implemented anything but Metamask yet`);
   }
 
   UjoLicensing = new LicensingHelper(provider);
@@ -90,7 +90,7 @@ export const login = (address, index) => async dispatch => {
     }
 
     // get contracts
-    const res = await fetch.getUserStoreContracts()
+    const res = await fetch.getUserStoreContracts();
     dispatch({
       type: 'AUTH_USER',
       address,
@@ -141,21 +141,27 @@ export const createProduct = (
   });
 };
 
-const uploadContent = async (files, storeId, productId) => {
-  return fetch.uploadContent(files, storeId, productId)
-};
+const uploadContent = async (files, storeId, productId) => fetch.uploadContent(files, storeId, productId);
 
-export const createScarceRelease = (releaseInfo, currentAccount, contractAddress, storeId, indexOfAccount) => async dispatch => {
+export const createScarceRelease = (
+  releaseInfo,
+  currentAccount,
+  contractAddress,
+  storeId,
+  indexOfAccount,
+) => async dispatch => {
   // create random ID for storage purposes
   const random = Math.floor(Math.random() * 1000000000);
   // TODO: add fault tolerance
   // content
   const files = [];
-  files.push(releaseInfo.releaseImage)
-  releaseInfo.tracks.map(track => { files.push(track.file) });
-  const trackLocations = await uploadContent(files, storeId, random);
+  files.push(releaseInfo.releaseImage);
+  releaseInfo.tracks.map(track => {
+    files.push(track.file);
+  });
+  const contentLocations = await uploadContent(files, storeId, random);
   // const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file, storeId, random)));
-  console.log('trackLocations', trackLocations);
+  console.log('contentLocations', contentLocations);
 
   releaseInfo.tracks = releaseInfo.tracks.map((track, i) => ({
     name: track.name,
@@ -164,8 +170,9 @@ export const createScarceRelease = (releaseInfo, currentAccount, contractAddress
     // preview: trackLocations[i].preview,
   }));
 
+  releaseInfo.image = releaseInfo.releaseImage.name;
+
   // metadata
-  console.log('releaseInfo', releaseInfo);
   const res = await axios.post(`${serverAddress}/metadata/${storeId}/${random}`, releaseInfo);
 
   // // check metadata
@@ -222,8 +229,8 @@ export const getAllProductsInfo = storeId => async dispatch => {
       // releaseContractInfo: releaseContractInfo.productData,
       releaseContracts: resp.data,
     });
-  })
-}
+  });
+};
 
 export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch => {
   const res = await axios.get(`${serverAddress}/metadata/${storeId}/${releaseId}`);
