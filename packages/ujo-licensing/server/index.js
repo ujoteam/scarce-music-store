@@ -105,28 +105,36 @@ const asyncMW = fn => (req, res, next) => {
 //
 // Authentication, step 1.  Request a challenge message from the server which will be signed by the user.
 //
-app.get('/login/:MetaAddress', metaAuth, asyncMW((req, res) => {
-  if (req.metaAuth && req.metaAuth.challenge) {
-    res.send({ challenge: req.metaAuth.challenge });
-  } else {
-    res.status(500).send();
-  }
-}));
+app.get(
+  '/login/:MetaAddress',
+  metaAuth,
+  asyncMW((req, res) => {
+    if (req.metaAuth && req.metaAuth.challenge) {
+      res.send({ challenge: req.metaAuth.challenge });
+    } else {
+      res.status(500).send();
+    }
+  }),
+);
 
 //
 // Authentication, step 2.  Recovers the user's ETH address from the signed challenge, and sets
 // a JWT that identifies the user for subsequent requests.
 //
-app.get('/login/:MetaMessage/:MetaSignature', metaAuth, asyncMW(async (req, res) => {
-  if (req.metaAuth && req.metaAuth.recovered) {
-    const ethAddress = req.metaAuth.recovered;
-    const token = jwt.sign({ ethAddress }, JWT_SECRET);
-    res.status(200).json({ jwt: token });
-  } else {
-    // Sig did not match, invalid authentication
-    res.status(401).send();
-  }
-}));
+app.get(
+  '/login/:MetaMessage/:MetaSignature',
+  metaAuth,
+  asyncMW(async (req, res) => {
+    if (req.metaAuth && req.metaAuth.recovered) {
+      const ethAddress = req.metaAuth.recovered;
+      const token = jwt.sign({ ethAddress }, JWT_SECRET);
+      res.status(200).json({ jwt: token });
+    } else {
+      // Sig did not match, invalid authentication
+      res.status(401).send();
+    }
+  }),
+);
 
 //
 // Fetch the list of stores deployed by the current user.
@@ -168,116 +176,126 @@ app.post('/stores', asyncMW(async (req, res) => {
 //
 // Upload new content.
 //
-app.post('/upload/:storeID/:productID', asyncMW(async (req, res) => {
-  const { storeID, productID } = req.params;
+app.post(
+  '/upload/:storeID/:productID',
+  asyncMW(async (req, res) => {
+    const { storeID, productID } = req.params;
 
-  const busboy = new Busboy({
-    headers: req.headers,
-    limits: {
-      // files: 1,
-      fileSize: process.env.MAX_UPLOAD_SIZE || 30 * 1024 * 1024, // default to 30mb max upload size
-    },
-  });
+    const busboy = new Busboy({
+      headers: req.headers,
+      limits: {
+        // files: 1,
+        fileSize: process.env.MAX_UPLOAD_SIZE || 30 * 1024 * 1024, // default to 30mb max upload size
+      },
+    });
 
-  const uploadOps = [];
-  busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
-    if (mimetype.includes('image')) {
-      const jpegFile = ffmpeg(fileStream)
-        .format('singlejpeg')
-        .pipe();
-      uploadOps.push(pipeFileToS3(jpegFile, filename, BUCKET_NAME, 'public-read'));
-    } else {
-      const trackIndex = uploadOps.length / 2;
+    const uploadOps = [];
+    busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
+      if (mimetype.includes('image')) {
+        const jpegFile = ffmpeg(fileStream)
+          .format('singlejpeg')
+          .pipe();
+        uploadOps.push(pipeFileToS3(jpegFile, filename, BUCKET_NAME, 'public-read'));
+      } else {
+        let trackIndex = 0;
+        const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
+        const originalFile = ffmpeg(fileStream)
+          .format('mp3')
+          .pipe();
 
-      const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
-      const originalFile = ffmpeg(fileStream)
-        .format('mp3')
-        .pipe();
+        const previewFilename = `${storeID}/${productID}/${trackIndex}-preview.mp3`;
+        const previewFile = ffmpeg(originalFile)
+          .format('mp3')
+          .duration(10)
+          .pipe();
 
-      const previewFilename = `${storeID}/${productID}/${trackIndex}-preview.mp3`;
-      const previewFile = ffmpeg(originalFile)
-        .format('mp3')
-        .duration(10)
-        .pipe();
+        uploadOps.push(pipeFileToS3(originalFile, originalFilename, BUCKET_NAME, 'private'));
+        uploadOps.push(pipeFileToS3(previewFile, previewFilename, BUCKET_NAME, 'private'));
 
-      uploadOps.push(pipeFileToS3(originalFile, originalFilename, BUCKET_NAME, 'private'));
-      uploadOps.push(pipeFileToS3(previewFile, previewFilename, BUCKET_NAME, 'private'));
-    }
-  });
+        trackIndex += 1;
+      }
+    });
 
-  busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
-    // ...
-  });
+    busboy.on('field', (fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) => {
+      // ...
+    });
 
-  busboy.on('finish', async () => {
-    console.log('finished receiving file uploads');
+    busboy.on('finish', async () => {
+      console.log('finished receiving file uploads');
 
-    await Promise.all(uploadOps);
-    console.log('S3 uploads complete.');
+      await Promise.all(uploadOps);
+      console.log('S3 uploads complete.');
 
-    return res.json({});
-  });
+      return res.json({});
+    });
 
-  req.pipe(busboy);
-}));
+    req.pipe(busboy);
+  }),
+);
 
 //
 // Stream the given content.
 //
-app.get('/content/:storeID/:productID/:trackIndex', asyncMW(async (req, res) => {
-  const ethAddress = req.user ? req.user.ethAddress : null;
-  const { storeID, productID, trackIndex } = req.params;
-  const { download } = req.query;
+app.get(
+  '/content/:storeID/:productID/:trackIndex',
+  asyncMW(async (req, res) => {
+    const ethAddress = req.user ? req.user.ethAddress : null;
+    const { storeID, productID, trackIndex } = req.params;
+    const { download } = req.query;
 
-  const [store] = await redis.getStores({ storeIDs: [storeID] });
+    const [store] = await redis.getStores({ storeIDs: [storeID] });
 
-  if (!store) {
-    return res.status(404).send();
-  }
+    if (!store) {
+      return res.status(404).send();
+    }
 
-  let userOwnsLicense = false;
-  if (ethAddress) {
-    let productIds = await UjoLicense.getOwnedProductIds(ethAddress, store, 0);
-    productIds = productIds.map(id => id.toString());
-    userOwnsLicense = productIds.indexOf(productID) > -1;
-  }
+    let userOwnsLicense = false;
+    if (ethAddress) {
+      let productIds = await UjoLicense.getOwnedProductIds(ethAddress, store, 0);
+      productIds = productIds.map(id => id.toString());
+      userOwnsLicense = productIds.indexOf(productID) > -1;
+    }
 
-  // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
-  // fetched via a URL.  We have to use the authenticated client.  We might support other 3rd party
-  // stores with their own auth schemes as well.
+    // @@TODO: store better metadata describing where content is stored, because S3 can't simply be
+    // fetched via a URL.  We have to use the authenticated client.  We might support other 3rd party
+    // stores with their own auth schemes as well.
 
-  const s3ContentKey = userOwnsLicense
-    ? `${storeID}/${productID}/${trackIndex}.mp3`
-    : `${storeID}/${productID}/${trackIndex}-preview.mp3`;
+    const s3ContentKey = userOwnsLicense
+      ? `${storeID}/${productID}/${trackIndex}.mp3`
+      : `${storeID}/${productID}/${trackIndex}-preview.mp3`;
 
-  if (download) {
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(s3ContentKey)}"`);
-  }
+    if (download) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(s3ContentKey)}"`);
+    }
 
-  try {
-    const s3 = new AWS.S3({});
-    const params = { Bucket: BUCKET_NAME, Key: s3ContentKey };
-    s3.getObject(params)
-      .createReadStream()
-      .pipe(res);
-  } catch (err) {
-    console.log('ERROR: ', err);
-    res.status(500).json({ error: err.toString() });
-  }
-}));
+    try {
+      const s3 = new AWS.S3({});
+      const params = { Bucket: BUCKET_NAME, Key: s3ContentKey };
+      s3.getObject(params)
+        .createReadStream()
+        .pipe(res);
+    } catch (err) {
+      console.log('ERROR: ', err);
+      res.status(500).json({ error: err.toString() });
+    }
+  }),
+);
 
 //
 // Fetch metadata for the given productID
 //
-app.get('/metadata/:storeID/:productID', asyncMW(async (req, res) => {
-  const { storeID, productID } = req.params;
-  const metadata = await redis.getMetadata(storeID, productID);
-  metadata.tracks = metadata.tracks || [];
+app.get(
+  '/metadata/:storeID/:productID',
+  asyncMW(async (req, res) => {
+    const { storeID, productID } = req.params;
+    const metadata = await redis.getMetadata(storeID, productID);
+    metadata.tracks = metadata.tracks || [];
 
-  console.log(metadata);
-  res.json(metadata);
-}));
+    console.log(metadata);
+    res.json(metadata);
+  }),
+);
 
 //
 // Store metadata for the given productID

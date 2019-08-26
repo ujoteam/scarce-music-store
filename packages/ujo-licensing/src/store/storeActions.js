@@ -39,7 +39,9 @@ export const getTokensForAddressFromContract = (address, contractAddress) => asy
 };
 
 export const buyProduct = (productId, storeId, address, indexOfAccount) => async (dispatch, getState) => {
-  const store = getState().store.getIn(['stores', storeId]).toJS()
+  const store = getState()
+    .store.getIn(['stores', storeId])
+    .toJS();
 
   const licenseId = await UjoLicensing.buyProduct(productId, address, store, indexOfAccount);
   dispatch({
@@ -162,7 +164,11 @@ export const createScarceRelease = (
   releaseInfo.tracks.map(track => {
     files.push(track.file);
   });
+
+  dispatch({ type: 'LOADING' });
   const contentLocations = await uploadContent(files, storeId, random);
+  dispatch({ type: 'LOADED' });
+
   // const trackLocations = await Promise.all(releaseInfo.tracks.map(async track => uploadContent(track.file, storeId, random)));
   console.log('contentLocations', contentLocations);
 
@@ -265,4 +271,4 @@ export const downloadProduct = (storeId, releaseId, artistName, releaseName, tra
   dispatch({ type: 'DOWNLOADING' });
   const files = await fetch.downloadFiles(storeId, releaseId, artistName, releaseName, tracks);
   dispatch({ type: 'DOWNLOADED' });
-}
+};

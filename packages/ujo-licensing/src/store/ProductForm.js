@@ -23,7 +23,15 @@ export class ProductForm extends React.Component {
 
     const { currentAccount, currentStore, indexOfAccount, licensingContractAddress } = this.props;
 
-    this.props.createProduct(id, price, inventory, currentAccount, currentStore, licensingContractAddress, indexOfAccount);
+    this.props.createProduct(
+      id,
+      price,
+      inventory,
+      currentAccount,
+      currentStore,
+      licensingContractAddress,
+      indexOfAccount,
+    );
   }
 
   render() {
@@ -60,7 +68,7 @@ export class ProductForm extends React.Component {
           />
         </Form.Field>
         <Button type="submit" width={1}>
-          Create Product
+          Create
         </Button>
       </Form>
     );

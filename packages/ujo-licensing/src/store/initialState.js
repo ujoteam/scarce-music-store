@@ -9,7 +9,7 @@ const storeInitialState = {
   purchases: {},
   releases: {},
   downloading: false,
+  loading: false,
 };
 
 export default storeInitialState;
-

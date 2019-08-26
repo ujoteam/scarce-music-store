@@ -19,6 +19,8 @@ export class ReleaseForm extends React.Component {
     this.recordLabel = React.createRef();
     this.releaseImage = React.createRef();
 
+    this.loading = React.createRef();
+
     this.state = { tracks: 1 };
   }
 
@@ -62,10 +64,11 @@ export class ReleaseForm extends React.Component {
   }
 
   render() {
+    const loadingText = this.props.loading ? 'Loading...' : 'Create Product';
     return (
       <Box>
         <Form onSubmit={e => this.handleSubmit(e)}>
-          <Box p={15} display="inline-block" width={1/3}>
+          <Box p={15} display="inline-block" width={1 / 3}>
             <Form.Field label="Artist Name" width={1}>
               <Form.Input
                 type="text"
@@ -77,7 +80,7 @@ export class ReleaseForm extends React.Component {
               />
             </Form.Field>
           </Box>
-          <Box p={15} display="inline-block" width={1/3}>
+          <Box p={15} display="inline-block" width={1 / 3}>
             <Form.Field label="Release Name" width={1}>
               <Form.Input
                 type="text"
@@ -89,18 +92,12 @@ export class ReleaseForm extends React.Component {
               />
             </Form.Field>
           </Box>
-          <Box p={15} display="inline-block" width={1/3}>
+          <Box p={15} display="inline-block" width={1 / 3}>
             <Form.Field label="Release Image" width={1}>
-              <Form.Input
-                type="file"
-                required
-                ref={this.releaseImage}
-                width={1}
-                onChange={this.handleValidation}
-              />
+              <Form.Input type="file" required ref={this.releaseImage} width={1} onChange={this.handleValidation} />
             </Form.Field>
           </Box>
-          <Box p={15} display="inline-block" width={1/4}>
+          <Box p={15} display="inline-block" width={1 / 4}>
             <Form.Field label="Price" width={1}>
               <Form.Input
                 type="text"
@@ -112,7 +109,7 @@ export class ReleaseForm extends React.Component {
               />
             </Form.Field>
           </Box>
-          <Box p={15} display="inline-block" width={1/4}>
+          <Box p={15} display="inline-block" width={1 / 4}>
             <Form.Field label="Inventory" width={1}>
               <Form.Input
                 type="number"
@@ -124,7 +121,7 @@ export class ReleaseForm extends React.Component {
               />
             </Form.Field>
           </Box>
-          <Box p={15} display="inline-block" width={1/4}>
+          <Box p={15} display="inline-block" width={1 / 4}>
             <Form.Field label="Record Label" width={1}>
               <Form.Input
                 type="text"
@@ -136,15 +133,9 @@ export class ReleaseForm extends React.Component {
               />
             </Form.Field>
           </Box>
-          <Box p={15} display="inline-block" width={1/4}>
+          <Box p={15} display="inline-block" width={1 / 4}>
             <Form.Field label="Date Published" width={1}>
-              <Form.Input
-                type="date"
-                required
-                ref={this.date}
-                width={1}
-                onChange={this.handleValidation}
-              />
+              <Form.Input type="date" required ref={this.date} width={1} onChange={this.handleValidation} />
             </Form.Field>
           </Box>
           <Box p={15} display="inline-block" width={1}>
@@ -166,7 +157,7 @@ export class ReleaseForm extends React.Component {
             <TrackList getFields={this.getFields.bind(this)} trackCount={this.state.tracks} />
           </Box>
           <Button type="submit" width={1}>
-            Create Product
+            {loadingText}
           </Button>
         </Form>
       </Box>
@@ -178,6 +169,7 @@ export default connect(
   state => ({
     currentAccount: state.store.get('currentAccount'),
     indexOfAccount: state.store.getIn(['web3', 'accounts']).indexOf(state.store.get('currentAccount')),
+    loading: state.store.get('loading'),
   }),
   {
     createScarceRelease,

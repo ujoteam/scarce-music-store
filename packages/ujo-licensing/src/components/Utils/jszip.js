@@ -1,14 +1,16 @@
 import JSZip from 'jszip';
 
 import getBinaryContent from './zipUtils';
+
 const serverAddress = 'http://localhost:3001';
 
-const getBinary = (url, jwt) => new Promise((res, rej) => {
-  getBinaryContent(url, jwt, (err, data) => {
-    if (err) rej(err);
-    else res(data);
+const getBinary = (url, jwt) =>
+  new Promise((res, rej) => {
+    getBinaryContent(url, jwt, (err, data) => {
+      if (err) rej(err);
+      else res(data);
+    });
   });
-});
 
 const createZip = async (storeId, releaseId, artistName, releaseName, tracks, jwt) => {
   const a = document.createElement('a');
@@ -22,7 +24,9 @@ const createZip = async (storeId, releaseId, artistName, releaseName, tracks, jw
     const releaseDir = zip.folder(`${artistName}-${releaseName}_mp3`.replace(/ /g, '_'));
 
     // create binaries
-    const createBinary = tracks.map((track, i) => getBinary(`${serverAddress}/content/${storeId}/${releaseId}/0.5?download=true`, jwt));
+    const createBinary = tracks.map((track, i) =>
+      getBinary(`${serverAddress}/content/${storeId}/${releaseId}/${i}?download=true`, jwt),
+    );
     const binaries = await Promise.all(createBinary);
 
     // add files to directory in the zip
@@ -49,4 +53,3 @@ const createZip = async (storeId, releaseId, artistName, releaseName, tracks, jw
 };
 
 export default createZip;
-
