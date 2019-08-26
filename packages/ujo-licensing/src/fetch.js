@@ -1,7 +1,9 @@
 import axios from 'axios';
+import createZip from './components/Utils/jszip';
 
 export let jwt;
 const serverAddress = 'http://localhost:3001';
+
 
 function getHeaders() {
   if (jwt) {
@@ -56,3 +58,7 @@ export const requestFaucet = async () => {
   const resp = await axios.get(`${serverAddress}/faucet`, { headers: getHeaders() });
   console.log('faucet resp ~>', resp.data);
 };
+
+export const downloadFiles = async (storeId, releaseId, artistName, releaseName, tracks) => {
+  const zipItUp = await createZip(storeId, releaseId, artistName, releaseName, tracks, jwt);
+}

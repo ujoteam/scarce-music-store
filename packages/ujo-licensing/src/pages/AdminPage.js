@@ -40,7 +40,6 @@ export class AdminPage extends React.Component {
             to={`/admin/store/${addses.get('id')}`}
             style={{ textDecoration: 'none', color: 'black' }}
           >
-            <span>{addses.get('name')}</span>
             <Box
               className="store"
               style={{
@@ -52,9 +51,10 @@ export class AdminPage extends React.Component {
               }}
             >
               <Jdenticon seed={addses.get('LicenseSale')} size={64} style={{ marginRight: 16 }} />
-              <Heading>{addses.get('name')}</Heading>
-              <span>Store Id: </span>
-              <EthAddress truncate address={addses.get('LicenseSale')} />
+              <div>
+                <Heading>{addses.get('name')}</Heading>
+                <EthAddress truncate address={addses.get('LicenseSale')} />
+              </div>
             </Box>
           </Link>
         ))}

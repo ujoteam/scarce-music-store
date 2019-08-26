@@ -60,6 +60,7 @@
     "immutable": "^4.0.0-rc.12",
     "jdenticon": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
+    "jszip": "^3.2.2",
     "lodash": "^4.17.15",
     "node-cache": "^4.2.0",
     "os": "^0.1.1",

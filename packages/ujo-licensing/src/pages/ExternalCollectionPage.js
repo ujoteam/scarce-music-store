@@ -42,7 +42,7 @@ export const ExternalStorePage = ({ products, accounts, storeName, match, getAll
         <br />
         <Flex p={10} flexWrap="wrap" justifyContent="space-around">
           {uniqueKeys.map((key, i) => (
-            <Link to={`/release/${match.params.storeId}/${key}`}>
+            <Link to={`/release/${match.params.storeId}/${key}`} key={key}>
               <Box key={key} height="400px" width="300px" mb="50px" style={{ display: 'inline-block' }}>
                 <Box
                   height="300px"

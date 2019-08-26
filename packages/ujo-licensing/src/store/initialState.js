@@ -8,6 +8,7 @@ const storeInitialState = {
   },
   purchases: {},
   releases: {},
+  downloading: false,
 };
 
 export default storeInitialState;

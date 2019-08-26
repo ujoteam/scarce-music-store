@@ -242,12 +242,10 @@ export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch
   // check if user owns release
   let owned = false;
   // TODO: determine why this call to get ownedIds does not work...
-  // if (ethAddress) {
-  //   console.log('ethAddress', ethAddress)
-  //   console.log('storeInfo.LicenseInventory', storeInfo)
-  //   const ownedIds = await UjoLicensing.getOwnedProductIds(ethAddress, storeInfo);
-  //   owned = ownedIds.indexOf(parseInt(releaseId)) > -1;
-  // }
+  if (ethAddress) {
+    const ownedIds = await UjoLicensing.getOwnedProductIds(ethAddress, storeInfo);
+    owned = ownedIds.indexOf(parseInt(releaseId)) > -1;
+  }
   releaseContractInfo.productData.totalSold = releaseContractInfo.soldData;
   dispatch({
     type: 'RELEASE_INFO',
@@ -260,3 +258,8 @@ export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch
   });
 };
 
+export const downloadProduct = (storeId, releaseId, artistName, releaseName, tracks) => async dispatch => {
+  dispatch({ type: 'DOWNLOADING' });
+  const files = await fetch.downloadFiles(storeId, releaseId, artistName, releaseName, tracks);
+  dispatch({ type: 'DOWNLOADED' });
+}

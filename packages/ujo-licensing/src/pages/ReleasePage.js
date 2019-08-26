@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Fragment } from 'react';
 import { fromJS } from 'immutable';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Box, Flex, Heading, Text, Button } from 'rimble-ui';
 
 import p0 from '../img/pexels0.jpeg';
-import { getReleaseInfo, buyProduct } from '../store/storeActions';
+import { getReleaseInfo, buyProduct, downloadProduct } from '../store/storeActions';
 import { setRelease, togglePlay, setCurrentTrackIndex } from '../components/MediaPlayer/actions';
 import { PlayBig, PauseBig, Play, Pause } from '../components/Icons';
 
@@ -56,6 +56,8 @@ const ReleasePage = ({
   currentTrackIndex,
   playing,
   sameReleaseAsMP,
+  downloadProduct,
+  downloading,
 }) => {
   useEffect(() => {
     if (web3Initialized) {
@@ -78,7 +80,8 @@ const ReleasePage = ({
   };
 
   const salesLeft = releaseInfo.get('totalSupply') - releaseInfo.get('totalSold');
-
+  const buyButtonText = releaseInfo.get('owned') ? 'Buy Another' : `Buy Release - $${releaseInfo.get('price')}`;
+  const dloadText = downloading ? 'Downloading...' : 'Download Release';
   return (
     <Box position="relative" minHeight="100vh" style={{ overflow: 'hidden' }}>
       <Box
@@ -159,12 +162,17 @@ const ReleasePage = ({
         </Box>
         <Box style={{ textAlign: 'right' }}>
           <span>
-            There are {salesLeft} releases left of the {releaseInfo.get('inventory')} created.
+            There are {salesLeft} releases left of the {releaseInfo.get('totalSupply')} created.
                               </span>
           <br />
-          <Button onClick={() => buyProduct(match.params.releaseId, match.params.storeId, currentAccount)}>
-            Buy Release - $            {releaseInfo.get('price')}
-          </Button>
+          <Button onClick={() => buyProduct(match.params.releaseId, match.params.storeId, currentAccount)}>{buyButtonText}</Button>
+          {releaseInfo.get('owned') && (
+            <Fragment>
+              <br />
+              <br />
+              <Button onClick={() => downloadProduct(match.params.storeId, match.params.releaseId, releaseInfo.get('artistName'), releaseInfo.get('releaseName'), releaseInfo.get('tracks'))}>{dloadText}</Button>
+            </Fragment>
+          )}
         </Box>
       </Box>
     </Box>
@@ -182,6 +190,7 @@ export default connect(
     currentTrackIndex: state.mediaPlayer.get('currentTrackIndex'),
     web3Initialized: !!state.store.getIn(['web3', 'accounts', 0]),
     currentAccount: state.store.get('currentAccount'),
+    downloading: state.store.get('downloading'),
   }),
   {
     getReleaseInfo,
@@ -189,5 +198,6 @@ export default connect(
     togglePlay,
     setCurrentTrackIndex,
     buyProduct,
+    downloadProduct,
   },
 )(ReleasePage);

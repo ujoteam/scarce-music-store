@@ -61,7 +61,8 @@ const reducer = (state = fromJS(initialState), action) => {
     case 'GET_PURCHASES':
       return state.setIn(['purchases', action.contractAddress], fromJS(action.productIds));
     case 'PRODUCT_PURCHASE':
-      return state.updateIn(['purchases', action.contractAddress], (v = fromJS([])) => v.push(action.productId));
+      return state.updateIn(['purchases', action.storeId], (v = fromJS([])) => v.push(action.productId))
+                  .setIn(['stores', action.storeId, 'products', action.productId, 'owned'], true);
     case 'VERIFY_OWNERSHIP':
       // return state.updateIn(['purchases', action.contractAddress], (v = fromJS([])) => v.push(action.verified));
       return state;
@@ -71,6 +72,10 @@ const reducer = (state = fromJS(initialState), action) => {
                   .updateIn(['stores', action.storeId, 'products', action.releaseId], (v = fromJS({})) => v.merge(fromJS(action.releaseContractInfo)))
                   .setIn(['stores', action.storeId, 'products', action.releaseId, 'id'], action.releaseId)
                   .setIn(['stores', action.storeId, 'products', action.releaseId, 'owned'], action.owned || false)
+    case 'DOWNLOADING':
+      return state.set('downloading', true);
+    case 'DOWNLOADED':
+      return state.set('downloading', false);
     default:
       return state;
   }
