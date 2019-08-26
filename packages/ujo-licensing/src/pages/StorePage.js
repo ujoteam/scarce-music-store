@@ -32,7 +32,8 @@ export class StorePage extends React.Component {
     })
     console.log('uniqueKeys', uniqueKeys)
     return (
-      <Box p={30}>
+      <div>
+        <Box p={30}>
         <div style={{ display: 'flex' }}>
           <Heading>Store: {storeName}</Heading>
           <div style={{ flexGrow: 1 }} />
@@ -81,7 +82,9 @@ export class StorePage extends React.Component {
             ))}
           </tbody>
         </Table>
+        </Box>
 
+        <Box p={30} style={{ backgroundColor: '#ececec' }}>
         <Text
           style={{
             fontSize: '1.3rem',
@@ -105,7 +108,8 @@ export class StorePage extends React.Component {
             </Box>
           </Link>
         ))} */}
-      </Box>
+        </Box>
+      </div>
     );
   }
 }

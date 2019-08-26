@@ -81,15 +81,6 @@ export class App extends React.Component {
               ))}
             </select>
           </div>
-          <div>
-            <input type="file" ref={this.inputFile} multiple />
-            <button onClick={(evt) => this.onClickUpload(evt)}>Upload</button>
-          </div>
-          <ReactAudioPlayer
-            src={`http://localhost:3001/content/0xdeadbeef/1234/0` /* @@TODO: track '0' is hard-coded here, make it selectable */}
-            controls
-            onError={err => console.error('AUDIO ERR ~>', err)}
-          />
         </Box>
         {this.props.children}
         <MediaPlayerContainer />

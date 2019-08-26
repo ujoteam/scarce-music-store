@@ -212,8 +212,8 @@ class UjoLicensing {
     };
   }
 
-  async getProductInfoForContract(contractAddress, productId, indexOfAccount) {
-    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddress, indexOfAccount);
+  async getProductInfoForContract(contractAddresses, productId, indexOfAccount) {
+    const ContractInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddresses.LicenseInventory, indexOfAccount);
 
     let productData = await ContractInstance.productInfo(productId);
     productData = this.normalizeProductValues(productData);
@@ -227,10 +227,8 @@ class UjoLicensing {
   }
 
   async buyProduct(productId, address, contractAddresses, indexOfAccount) {
-      console.log('ULC buyProduct ~>', { productId, address, contractAddresses, DAI: process.env.DAI_CONTRACT_ADDRESS, indexOfAccount })
     const LicenseInventoryInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddresses.LicenseInventory, indexOfAccount);
     const productInfo = await LicenseInventoryInstance.productInfo(productId);
-    console.log('ULC productInfo ~>', productInfo)
 
     const LicenseSaleInstance = this.initializeContractIfNotExist(LicenseSale, contractAddresses.LicenseSale, indexOfAccount);
 

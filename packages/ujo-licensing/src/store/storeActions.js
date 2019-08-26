@@ -230,7 +230,7 @@ export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch
   const resp = await axios.get(`${serverAddress}/stores?storeID=${storeId}`);
   const storeInfo = resp.data;
 
-  const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo.LicenseInventory, releaseId);
+  const releaseContractInfo = await UjoLicensing.getProductInfoForContract(storeInfo, releaseId);
 
   // check if user owns release
   let owned = false;
@@ -238,7 +238,7 @@ export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch
   // if (ethAddress) {
   //   console.log('ethAddress', ethAddress)
   //   console.log('storeInfo.LicenseInventory', storeInfo)
-  //   const ownedIds = await UjoLicensing.getOwnedProductIds(ethAddress, storeInfo.LicenseOwnership);
+  //   const ownedIds = await UjoLicensing.getOwnedProductIds(ethAddress, storeInfo);
   //   owned = ownedIds.indexOf(parseInt(releaseId)) > -1;
   // }
   releaseContractInfo.productData.totalSold = releaseContractInfo.soldData;
@@ -252,3 +252,4 @@ export const getReleaseInfo = (releaseId, storeId, ethAddress) => async dispatch
     owned,
   });
 };
+

@@ -7,7 +7,6 @@ import MediaPlayer from './MediaPlayer';
 import ReactHowler from './ReactHowler';
 // import { AUDIO_PROXY_ENDPOINT } from '../../constants/endpoints';
 import { togglePlay, seek, setVolume, nextTrack, prevTrack, setPlaying } from './actions';
-import { jwt } from '../../fetch'
 
 export class MediaPlayerContainer extends React.Component {
   // static propTypes = {
@@ -103,7 +102,7 @@ export class MediaPlayerContainer extends React.Component {
   render() {
     if (!this.props.currentTrack) return null;
 
-    const src = `http://localhost:3001/content/${this.props.contractAddress}/${this.props.release.get('id')}/${this.props.currentTrackIndex}?jwt=${jwt}`;
+    const src = `http://localhost:3001/content/${this.props.contractAddress}/${this.props.release.get('id')}/${this.props.currentTrackIndex}?jwt=${this.props.jwt}`;
     // const src = 'https://freemusicarchive.org/file/music/Oddio_Overplay/Gustav_Landin/Canzoni_per_i_Natali_del_Futuro/Gustav_Landin_-_01_-_Elatan.mp3';
     // const format = this.props.currentTrack.getIn(['audio', 'encodingFormat']).split('/')[1];
     // const uniqueTrackId = `${this.props.currentTrack.get('releaseId')}-${this.props.currentTrackIndex}`;
@@ -145,6 +144,7 @@ function mapStateToProps(state) {
   const currentTrack = state.mediaPlayer.getIn(['release', 'tracks', trackIndex]);
   const owned = state.mediaPlayer.getIn(['release', 'owned']);
   return {
+    jwt: state.store.get('jwt'),
     playing: state.mediaPlayer.get('playing'),
     loading: state.mediaPlayer.get('loading'),
     volume: state.mediaPlayer.get('volume'),
