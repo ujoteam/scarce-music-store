@@ -1,39 +1,40 @@
-const path = require('path');
-const webpack = require('webpack');
+const path = require('path')
+const webpack = require('webpack')
 const DotenvPlugin = require('dotenv-webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-  entry: './src/main.js',
+  entry:  './src/main.js',
   // entry: './src/index.js',
   output: {
-    filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist'),
+    filename:   'bundle.js',
+    path:       path.resolve(__dirname, 'dist'),
     publicPath: '/',
   },
   devServer: {
-    contentBase: path.join(__dirname, 'dist'),
-    compress: true,
-    port: 3003,
+    contentBase:        path.join(__dirname, 'dist'),
+    compress:           true,
+    port:               3003,
     historyApiFallback: true,
-    proxy: {
-      '/upload': 'http://localhost:3001',
+    proxy:              {
+      '/upload':   'http://localhost:3001',
       '/metadata': 'http://localhost:3001',
-      '/content': 'http://localhost:3001',
-      '/login': 'http://localhost:3001',
-      '/faucet': 'http://localhost:3001',
+      '/content':  'http://localhost:3001',
+      '/login':    'http://localhost:3001',
+      '/faucet':   'http://localhost:3001',
+      '/stores':   'http://localhost:3001',
     },
   },
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
+        test:    /\.jsx?$/,
         exclude: /node_modules/,
-        use: { loader: 'babel-loader' },
+        use:     { loader: 'babel-loader' },
       },
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
+        use:  [ 'style-loader', 'css-loader' ],
       },
       // {
       //   test: /\.(s*)css$/,
@@ -44,12 +45,12 @@ module.exports = {
       // },
       {
         test: /\.(png|jp(e*)g|svg)$/,
-        use: [
+        use:  [
           {
-            loader: 'url-loader',
+            loader:  'url-loader',
             options: {
               limit: 8000, // Convert images < 8kb to base64 strings
-              name: 'images/[hash]-[name].[ext]',
+              name:  'images/[hash]-[name].[ext]',
             },
           },
         ],
@@ -59,13 +60,11 @@ module.exports = {
   plugins: [
     new DotenvPlugin(),
     new webpack.ProvidePlugin({
-      $: 'jquery',
+      $:      'jquery',
       jQuery: 'jquery',
     }),
-    new HtmlWebpackPlugin({ template: __dirname + '/src/index.html' }),
+    new HtmlWebpackPlugin({ template: `${__dirname}/src/index.html` }),
   ],
-  watchOptions: {
-    poll: 500,
-  },
-  mode: 'development',
-};
+  watchOptions: { poll: 500 },
+  mode:         'development',
+}

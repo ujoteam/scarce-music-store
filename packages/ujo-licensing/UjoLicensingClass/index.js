@@ -231,7 +231,6 @@ class UjoLicensing {
   }
 
   async buyProduct(productId, address, contractAddresses, indexOfAccount) {
-    console.log('buyProduct', { productId, address, contractAddresses, indexOfAccount })
     const LicenseInventoryInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddresses.LicenseInventory, indexOfAccount);
     const productInfo = await LicenseInventoryInstance.productInfo(productId);
 
