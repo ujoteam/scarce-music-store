@@ -1,22 +1,24 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Box, Form } from 'rimble-ui';
 
 
 const TrackFields = ({ index, getFields }) => {
-  const trackName = React.createRef();
-  const songFile = React.createRef();
-  let duration = null;
+  const trackName = useRef();
+  const songFile = useRef();
+  const duration = useRef();
 
   const returnFields = () => {
-    return { name: trackName.current.value, file: songFile.current.files[0], index, duration };
+    return { name: trackName.current.value, file: songFile.current.files[0], index, duration: duration.current.value };
   }
 
   const getDuration = async () => {
     const objectUrl = URL.createObjectURL(songFile.current.files[0]);
     return new Promise((res, rej) => {
       const audio = new Audio();
-      audio.onloadedmetadata = () => duration = audio.duration;
+      audio.onloadedmetadata = () => {
+        duration.current.value = audio.duration;
+      };
       audio.onerror = () => rej('There was an error reading the file type to set track duration.');
       audio.src = objectUrl;
     });
@@ -30,7 +32,7 @@ const TrackFields = ({ index, getFields }) => {
     <Box>
       <Box p={15} display="inline-block" width={1/4}>
         <Form.Field label={`Track ${index + 1} File`} width={1}>
-          <Form.Input type="file" width={1} required ref={songFile} onChange={() => getDuration()}/>
+          <Form.Input type="file" width={1} required ref={songFile} onChange={() => getDuration()} />
         </Form.Field>
       </Box>
       <Box p={15} display="inline-block" width={3/4}>
@@ -38,8 +40,9 @@ const TrackFields = ({ index, getFields }) => {
           <Form.Input type="text" placeholder="Track Name" width={1} required ref={trackName} />
         </Form.Field>
       </Box>
+      <Form.Input type="text" placeholder="Track Name" width={1} ref={duration} style={{ display: 'none' }} />
     </Box>
-  )
-}
+  );
+};
 
 export default TrackFields;

@@ -90,7 +90,7 @@ export class MediaPlayerContainer extends React.Component {
       // TODO: remove would be great - improve Howler...
       const duration = this.props.duration;
       const isAtEnd = duration - currentPosition < 1;
-      if (isAtEnd) this.nextTrackHandler();
+    if (isAtEnd) this.nextTrackHandler();
     }
 
     // If we are still playing, we want to continue to update the pos

@@ -98,10 +98,10 @@ export const login = (address, index) => async (dispatch) => {
     // get contracts
     const res = await fetch.getUserStoreContracts()
     dispatch({
-      type:              'AUTH_USER',
+      type: 'AUTH_USER',
       address,
       contractAddresses: res.data,
-    })
+    });
   } catch (err) {
     console.log('/login error:', err)
   }

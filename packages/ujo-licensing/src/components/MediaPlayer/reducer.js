@@ -38,13 +38,13 @@ const reducer = (state = fromJS(initialState), action) => {
       return state.set('volume', action.volume);
     case 'ADJUST_CURRENT_TRACK': {
       const newTrackIndex = getRelativeTrackNumber(state.get('currentTrackIndex'), action.offset, state.getIn(['release', 'tracks']).size);
-      console.log('newTrackIndex', newTrackIndex);
+      // console.log('newTrackIndex', newTrackIndex);
       // Make sure we don't set `loading = true` if we are loading the same soundfile
-      const currentTrackAddr = state.getIn(['playlist', state.get('currentTrackIndex')]);
-      const nextTrackAddr = state.getIn(['playlist', newTrackIndex]);
-      if (currentTrackAddr === nextTrackAddr) {
-        return state.update('trackCount', val => val + 1);
-      }
+      // const currentTrackAddr = state.getIn(['playlist', state.get('currentTrackIndex')]);
+      // const nextTrackAddr = state.getIn(['playlist', newTrackIndex]);
+      // if (currentTrackAddr === nextTrackAddr) {
+      //   return state.update('trackCount', val => val + 1);
+      // }
       return state.set('currentTrackIndex', newTrackIndex);
     }
     case 'SET_CURRENT_TRACK':

@@ -86,7 +86,7 @@ export class MediaPlayer extends React.Component {
       }}>
         <Flex justifyContent="space-between" alignItems="center">
           <Link to="/release/499">
-            <Box style={{height: '60px', width: '60px', background: 'black', display: 'inline-block'}}/>
+            <Box style={{height: '60px', width: '60px', backgroundImage: `url("https://ujo-licensing-media.s3.amazonaws.com/${this.props.release.get('image')}")`, backgroundSize: 'cover', display: 'inline-block'}}/>
           </Link>
           <Box>
             <span>{this.props.release.get('artistName')}</span>
@@ -101,7 +101,7 @@ export class MediaPlayer extends React.Component {
             <span className="current-pos-text">{formattedPos}</span>
             <span style={{ width: '100px', display: 'inline-block', margin: '10px' }}>
               <ProgressBar
-                total={10}
+                total={this.props.duration}
                 oneStepLength={1}
                 pos={this.props.pos}
                 onClick={(v) => this.props.progressBarChange(v)}

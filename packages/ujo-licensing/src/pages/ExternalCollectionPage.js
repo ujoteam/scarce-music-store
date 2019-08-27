@@ -50,7 +50,7 @@ export const ExternalStorePage = ({ products, accounts, storeName, match, getAll
                   borderRadius={8}
                   mb={10}
                   style={{
-                    backgroundImage: `url("${photos[i]}")`,
+                    backgroundImage: `url("https://ujo-licensing-media.s3.amazonaws.com/${products.getIn([key, 'image'])}")`,
                     backgroundSize: 'cover',
                   }}
                 />
