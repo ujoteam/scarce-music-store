@@ -190,6 +190,7 @@ app.post(
     });
 
     const uploadOps = [];
+    let trackIndex = 0;
     busboy.on('file', async (fieldname, fileStream, filename, encoding, mimetype) => {
       if (mimetype.includes('image')) {
         const jpegFile = ffmpeg(fileStream)
@@ -197,7 +198,6 @@ app.post(
           .pipe();
         uploadOps.push(pipeFileToS3(jpegFile, filename, BUCKET_NAME, 'public-read'));
       } else {
-        let trackIndex = 0;
         const originalFilename = `${storeID}/${productID}/${trackIndex}.mp3`;
         const originalFile = ffmpeg(fileStream)
           .format('mp3')
