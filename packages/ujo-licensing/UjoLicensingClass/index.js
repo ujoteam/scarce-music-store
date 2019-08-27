@@ -109,9 +109,11 @@ class UjoLicensing {
     // newGas = ethers.utils.hexlify(Number(newGas));
     // const result = await factory.deploy({ gasLimit: newGas });
 
-    const saleInstance = await saleFactory.deploy();
-    const inventoryInstance = await inventoryFactory.deploy();
-    const ownershipInstance = await ownershipFactory.deploy();
+    const [ saleInstance, inventoryInstance, ownershipInstance ] = await Promise.all([
+        saleFactory.deploy(),
+        inventoryFactory.deploy(),
+        ownershipFactory.deploy(),
+    ])
 
     // Have to await each contract's `deployed()` method to ensure that we don't proceed until
     // the contract deployment txs have actually been mined
@@ -125,11 +127,13 @@ class UjoLicensing {
     console.log('Inventory Contract deployed to', inventoryInstance.address);
     console.log('Ownership Contract deployed to', ownershipInstance.address);
 
-    await inventoryInstance.setSaleController(saleInstance.address)
-    await saleInstance.setDAIContract(process.env.DAI_CONTRACT_ADDRESS)
-    await saleInstance.setInventoryContract(inventoryInstance.address)
-    await saleInstance.setOwnershipContract(ownershipInstance.address)
-    await ownershipInstance.setSaleController(saleInstance.address)
+    await Promise.all([
+        inventoryInstance.setSaleController(saleInstance.address),
+        saleInstance.setDAIContract(process.env.DAI_CONTRACT_ADDRESS),
+        saleInstance.setInventoryContract(inventoryInstance.address),
+        saleInstance.setOwnershipContract(ownershipInstance.address),
+        ownershipInstance.setSaleController(saleInstance.address),
+    ])
 
     const result = {
       LicenseSale: saleInstance.address,
@@ -227,6 +231,7 @@ class UjoLicensing {
   }
 
   async buyProduct(productId, address, contractAddresses, indexOfAccount) {
+    console.log('buyProduct', { productId, address, contractAddresses, indexOfAccount })
     const LicenseInventoryInstance = this.initializeContractIfNotExist(LicenseInventory, contractAddresses.LicenseInventory, indexOfAccount);
     const productInfo = await LicenseInventoryInstance.productInfo(productId);
 
