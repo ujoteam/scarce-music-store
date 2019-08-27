@@ -347,6 +347,10 @@ app.get(
   }),
 );
 
+app.use((req, res) => {
+  res.status(200).sendFile('./static/index.html')
+})
+
 //
 // Error handler
 //
