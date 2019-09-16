@@ -1,19 +1,63 @@
 {
   "name": "sample-backend",
   "version": "0.0.0",
-  "description": "backend for demo of ujo-licensing - requires aws config and redis",
+  "description": "Backend for demo of ujo-licensing - requires aws config, ffmpeg, and redis",
   "author": "Kyle Burke <k23burke@gmail.com>",
-  "homepage": "",
   "license": "ISC",
   "main": "lib/sample-backend.js",
   "directories": {
     "lib": "lib",
     "test": "__tests__"
   },
-  "files": [
-    "lib"
-  ],
   "scripts": {
-    "test": "echo \"Error: run tests from root\" && exit 1"
+    "test": "echo \"Error: run tests from root\" && exit 1",
+    "start": "node ./index.js"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.4",
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.5.4",
+    "@babel/preset-react": "^7.0.0",
+    "babel-eslint": "^10.0.2",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.1.0",
+    "eslint": "^6.0.1",
+    "eslint-config-airbnb": "^17.1.1",
+    "eslint-config-prettier": "^3.4.0",
+    "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-react": "^7.14.2",
+    "file-loader": "^4.1.0",
+    "html-webpack-plugin": "^3.2.0",
+    "prettier": "^1.18.2",
+    "redux-devtools-extension": "^2.13.8",
+    "style-loader": "^0.23.1",
+    "url-loader": "^2.1.0"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.4.4",
+    "aws-sdk": "^2.511.0",
+    "axios": "^0.19.0",
+    "bignumber.js": "^9.0.0",
+    "body-parser": "^1.19.0",
+    "busboy": "^0.3.1",
+    "cors": "^2.8.5",
+    "dotenv": "^8.0.0",
+    "eth-sig-util": "^1.4.2",
+    "ethers": "^4.0.33",
+    "ethereumjs-util": "^6.1.0",
+    "express": "^4.17.1",
+    "express-jwt": "^5.3.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.15",
+    "node-cache": "^4.2.0",
+    "os": "^0.1.1",
+    "path": "^0.12.7",
+    "redis": "^2.8.0",
+    "truffle-hdwallet-provider": "^1.0.13",
+    "uuid": "^3.3.2"
   }
 }
