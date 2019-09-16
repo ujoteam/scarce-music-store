@@ -1,5 +1,6 @@
 import axios from 'axios';
 import createZip from './components/Utils/jszip';
+import { API_ENDPOINT } from './config/endpoints';
 
 export let jwt;
 
@@ -17,24 +18,24 @@ function getHeaders() {
 }
 
 export const getLoginChallenge = ethAddress =>
-  axios.get(`/login/${ethAddress}`, { headers: getHeaders() });
+  axios.get(`${API_ENDPOINT}/login/${ethAddress}`, { headers: getHeaders() });
 
 export const setJWT = incomingJWT => {
   jwt = incomingJWT;
 };
 
 export const login = async (challenge, signature, ethAddress) => {
-  const resp2 = await axios.get(`/login/${challenge}/${signature}`, { headers: getHeaders() });
+  const resp2 = await axios.get(`${API_ENDPOINT}/login/${challenge}/${signature}`, { headers: getHeaders() });
   jwt = resp2.data.jwt;
   window.localStorage.setItem(`jwt-${ethAddress}`, jwt);
   return jwt;
 };
 
-export const deployStore = storeData => axios.post(`/stores`, storeData, { headers: getHeaders() });
+export const deployStore = storeData => axios.post(`${API_ENDPOINT}/stores`, storeData, { headers: getHeaders() });
 
-export const getUserStoreContracts = () => axios.get(`/stores?mine=1`, { headers: getHeaders() });
+export const getUserStoreContracts = () => axios.get(`${API_ENDPOINT}/stores?mine=1`, { headers: getHeaders() });
 
-export const getAllStoreContracts = () => axios.get(`/stores`, { headers: getHeaders() });
+export const getAllStoreContracts = () => axios.get(`${API_ENDPOINT}/stores`, { headers: getHeaders() });
 
 export const uploadContent = async (files, storeId, productId) => {
   console.log(files);
@@ -43,7 +44,7 @@ export const uploadContent = async (files, storeId, productId) => {
     formData.append(`track-${i}`, file);
   });
 
-  const contentLocations = await axios.post(`/upload/${storeId}/${productId}`, formData, {
+  const contentLocations = await axios.post(`${API_ENDPOINT}/upload/${storeId}/${productId}`, formData, {
     headers: {
       ...getHeaders(),
       'Content-Type': 'multipart/form-data',
@@ -54,7 +55,7 @@ export const uploadContent = async (files, storeId, productId) => {
 };
 
 export const requestFaucet = async () => {
-  const resp = await axios.get(`/faucet`, { headers: getHeaders() });
+  const resp = await axios.get(`${API_ENDPOINT}/faucet`, { headers: getHeaders() });
   console.log('faucet resp ~>', resp.data);
 };
 
