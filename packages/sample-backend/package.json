@@ -1,0 +1,19 @@
+{
+  "name": "sample-backend",
+  "version": "0.0.0",
+  "description": "backend for demo of ujo-licensing - requires aws config and redis",
+  "author": "Kyle Burke <k23burke@gmail.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/sample-backend.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  }
+}
